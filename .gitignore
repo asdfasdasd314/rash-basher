@@ -1,0 +1,21 @@
+# OS
+.DS_Store
+backend/.DS_Store
+frontend/.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# VSCode
+.vscode
+backend/.vscode
+frontend/.vscode
+
+# Database Files
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
