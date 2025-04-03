@@ -2,12 +2,12 @@
 
 from flask import Flask, request, jsonify
 from ml import classify_image
-from doctors import find_doctors
+from maps import find_local_doctors, geocode_address
 
 app = Flask(__name__)
 
 @app.route("/api/classify-rash", methods=["POST"])
-def classify_rash():
+def classify_rash_endpoint():
     if "image" not in request.files:
         return jsonify({"error": "No image provided"}), 400
     
@@ -23,14 +23,26 @@ def classify_rash():
 def find_doctors_endpoint():
     data = request.get_json()
     
-    if not data or 'location' not in data:
-        return jsonify({"error": "Location is required"}), 400
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+        
+    # Check if we have coordinates or an address
+    if 'latitude' in data and 'longitude' in data:
+        latitude = float(data['latitude'])
+        longitude = float(data['longitude'])
+    elif 'address' in data:
+        try:
+            latitude, longitude = geocode_address(data['address'])
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+    else:
+        return jsonify({"error": "Either latitude/longitude or address is required"}), 400
         
     try:
-        location = data['location']
-        limit = data.get('limit', 10)
+        radius = int(data.get('radius', 5000))  # Default 5km radius
+        max_results = int(data.get('limit', 10))
         
-        doctors = find_doctors(location, limit)
+        doctors = find_local_doctors(latitude, longitude, radius, max_results)
         return jsonify({"doctors": doctors}), 200
         
     except ValueError as e:
