@@ -19,3 +19,6 @@ frontend/.vscode
 backend/*.db
 backend/*.sqlite
 backend/*.sqlite3
+
+# Maps API Key
+backend/maps-api-key.txt

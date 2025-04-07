@@ -61,6 +61,7 @@ def find_local_doctors(latitude, longitude, radius=5000, max_results=10):
     except Exception as e:
         raise Exception(f"Error fetching doctors from Google Maps: {str(e)}")
 
+
 def geocode_address(address):
     """
     Convert an address to latitude and longitude coordinates.
@@ -86,3 +87,32 @@ def geocode_address(address):
         
     except Exception as e:
         raise Exception(f"Error geocoding address: {str(e)}") 
+
+
+def reverse_geocode_address(latitude, longitude):
+    """
+    Convert an address to latitude and longitude coordinates.
+
+    Args:
+        latitude (int): Latitude position
+        longitude (int): Longitude position
+
+    Returns:
+        address (str): Address to geocode (reverse of geocode_address function)
+    """
+
+    if not GOOGLE_MAPS_API_KEY:
+        raise ValueError("GOOGLE_MAPS_API_KEY environment variable not set")
+    
+    try:
+        gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
+        address_result = gmaps.reverse_geocode((latitude, longitude))
+
+        if not address_result:
+            raise ValueError(f"Could not reverse geocode location: {(latitude, longitude)}")
+        
+        location = address_result[0]['formatted_address']
+        return location
+
+    except Exception as e:
+        raise Exception(f"Error geocoding address: {str(e)}")
