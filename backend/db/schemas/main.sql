@@ -5,11 +5,11 @@ CREATE TABLE users (
     password TEXT NOT NULL
 );
 
-CREATE TABLE diagnoses (
-    diagnosis_id TEXT PRIMARY KEY NOT NULL UNIQUE,
+CREATE TABLE classification (
+    classification_id TEXT PRIMARY KEY NOT NULL UNIQUE,
     user_id TEXT NOT NULL,
-    diagnosis TEXT NOT NULL,
-    diagnosed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    classification TEXT NOT NULL,
+    classified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     image BLOB
 );
 

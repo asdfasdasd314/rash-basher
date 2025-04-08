@@ -51,13 +51,15 @@ def find_doctors_endpoint():
         return jsonify({"error": str(e)}), 500
     
 
-@app.route("/api/save-diagnosis", methods=["POST"])
-def save_diagnosis_endpoint():
+@app.route("/api/save-classification", methods=["POST"])
+def save_classification_endpoint():
     data = request.get_json()
     
     if not data:
         return jsonify({"error": "No data provided"}), 400
-    
-    # Here you would typically save the diagnosis to a database
-    # For now, we'll just return the data back
-    return jsonify({"status": "success", "data": data}), 200
+
+    # Validate the data
+    if "classification" not in data or "image" not in request.files:
+        return jsonify({"error": "Classification and image are required"}), 400
+
+    # Add to the database    
