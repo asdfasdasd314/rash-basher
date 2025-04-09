@@ -130,3 +130,8 @@ def save_classification_endpoint():
     conn.close()
 
     return jsonify({"success": True}), 200
+
+
+@app.route("/api/get-classifications", methods=["GET"])
+def get_classifications_endpoint():
+    pass
