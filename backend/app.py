@@ -134,4 +134,14 @@ def save_classification_endpoint():
 
 @app.route("/api/get-classifications", methods=["GET"])
 def get_classifications_endpoint():
-    pass
+    session_id = request.cookies.get("session_id")
+    if session_id is None:
+        return jsonify({"success": False, "error": "Not logged in"}), 400
+
+    conn = get_db_connetion()
+    user_id = get_user_id(conn, session_id)
+    if user_id is None:
+        return jsonify({"success": False, "error": "Session has expired"}), 400
+
+    classifications = conn.execute("SELECT * FROM classifications WHERE user_id = ?", (user_id,)).fetchall()
+    return jsonify({"success": True, "classifications": classifications}), 200
