@@ -14,7 +14,7 @@ import string
 app = Flask(__name__)
 DB_PATH = os.getenv("DATABASE_PATH")
 
-def get_db_connetion():
+def get_db_connection():
     if DB_PATH:
         conn = connect(DB_PATH)
     else:
@@ -102,7 +102,7 @@ def save_classification_endpoint():
         return jsonify({"success": False, "error": "Not logged in"}), 400
 
     # Now we have to start using the database
-    conn = get_db_connetion()
+    conn = get_db_connection()
 
     user_id = get_user_id(conn, session_id)
     if user_id is None:
@@ -138,7 +138,7 @@ def get_classifications_endpoint():
     if session_id is None:
         return jsonify({"success": False, "error": "Not logged in"}), 400
 
-    conn = get_db_connetion()
+    conn = get_db_connection()
     user_id = get_user_id(conn, session_id)
     if user_id is None:
         return jsonify({"success": False, "error": "Session has expired"}), 400
