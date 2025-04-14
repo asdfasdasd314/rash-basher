@@ -1,5 +1,5 @@
 from sqlite3 import Connection
-from app import generate_random_id
+from backend.src.app import generate_random_id
 from argon2 import PasswordHasher
 ph = PasswordHasher()
 

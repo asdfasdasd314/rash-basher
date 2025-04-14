@@ -1,9 +1,9 @@
 # App definition
 
 from flask import Flask, request, jsonify
-from user_auth import get_user_id
-from ml import classify_image
-from maps import find_local_doctors, geocode_address
+from backend.src.user_auth import get_user_id
+from backend.src.ml import classify_image
+from backend.src.maps import find_local_doctors, geocode_address
 import os
 from sqlite3 import connect, Connection, Row
 
