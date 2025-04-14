@@ -3,12 +3,27 @@ from backend.src.app import generate_random_id
 from argon2 import PasswordHasher
 ph = PasswordHasher()
 
-def get_user_id(conn: Connection, session_id: str) -> str | None:
+def get_user_by_username(conn: Connection, username: str) -> dict | None:
+    """
+    On the caller to close the connection
+    """
+    return conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+
+
+def get_user_id_by_session_id(conn: Connection, session_id: str) -> str | None:
     """
     On the caller to close the connection
     """
     # We don't close the connection as it may be used later on
     return conn.execute('SELECT user_id FROM sessions WHERE session_id = ?', (session_id,)).fetchone()
+
+
+def get_session_id_by_user_id(conn: Connection, user_id: str) -> str | None:
+    """
+    On the caller to close the connection
+    """
+    # We don't close the connection as it may be used later on
+    return conn.execute('SELECT session_id FROM sessions WHERE user_id = ?', (user_id,)).fetchone()
 
 
 def sign_up(conn: Connection, username: str, password: str, user_id: str):
