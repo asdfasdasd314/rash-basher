@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
 
-from backend.src.app import generate_random_id, get_db_connection
-from backend.src.ml import classify_image
-from backend.src.user_auth import get_user_id
+from db import generate_random_id, get_db_connection
+from ml import classify_image
+from user_auth import get_user_id_by_session_id
 
 classify_bp = Blueprint("classify", __name__)
 
@@ -16,7 +16,7 @@ def save_classification_endpoint():
     # Now we have to start using the database
     conn = get_db_connection()
 
-    user_id = get_user_id(conn, session_id)
+    user_id = get_user_id_by_session_id(conn, session_id)
     if user_id is None:
         return jsonify({"success": False, "error": "Session has expired"}), 400 # Only explanation for a session with no user
 
@@ -51,11 +51,12 @@ def get_classifications_endpoint():
         return jsonify({"success": False, "error": "Not logged in"}), 400
 
     conn = get_db_connection()
-    user_id = get_user_id(conn, session_id)
+    user_id = get_user_id_by_session_id(conn, session_id)
     if user_id is None:
         return jsonify({"success": False, "error": "Session has expired"}), 400
 
-    classifications = conn.execute("SELECT * FROM classifications WHERE user_id = ?", (user_id,)).fetchall()
+    rows = conn.execute("SELECT * FROM classifications WHERE user_id = ?", (user_id,)).fetchall()
+    classifications = [dict(row) for row in rows]
     return jsonify({"success": True, "classifications": classifications}), 200
 
 

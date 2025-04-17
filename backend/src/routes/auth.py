@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
 
-from backend.src.app import get_db_connection
-from backend.src.user_auth import delete_user, get_user_by_username, get_user_id_by_session_id, sign_in, sign_out, sign_up
+from db import get_db_connection, generate_random_id
 from argon2 import PasswordHasher
+import user_auth
 
 ph = PasswordHasher()
 auth_bp = Blueprint("auth", __name__)
@@ -19,14 +19,25 @@ def login_endpoint():
 
     # Check if we can login
     conn = get_db_connection()
-    session_id = sign_in(conn, username, password)
+
+    # Get the user_id
+    user_id = user_auth.get_user_id_by_username(conn, username)
+    if user_id is None:
+        return jsonify({"message": "Invalid username or password"}), 400
+
+    # Check if there is already a session for this user
+    session_id = user_auth.get_session_id_by_user_id(conn, user_id)
+    if session_id is not None:
+        return jsonify({"message": "User already logged in"}), 400
+
+    session_id = user_auth.sign_in(conn, username, password)
     conn.close()
 
     if session_id is None:
         return jsonify({"message": "Invalid username or password"}), 400
 
     # Set the session id as an http only cookie
-    response = jsonify({"message": "Login successful", "session_id": session_id})
+    response = jsonify({"message": "Login successful"})
     response.set_cookie("session_id", session_id, httponly=True, secure=True, samesite="strict")
     return response, 200
 
@@ -43,7 +54,7 @@ def signup_endpoint():
 
     # Check if username already exists
     conn = get_db_connection()
-    user = get_user_by_username(conn, username)
+    user = user_auth.get_user_by_username(conn, username)
     conn.close()
 
     if user is not None:
@@ -51,11 +62,11 @@ def signup_endpoint():
 
     # Create a new user
     conn = get_db_connection()
-    sign_up(conn, username, password)
+    user_id = generate_random_id(conn, "users", "user_id")
+    user_auth.sign_up(conn, username, password, user_id)
 
     # Immediately sign in the user
-    session_id = sign_in(conn, username, password)
-
+    session_id = user_auth.sign_in(conn, username, password)
     conn.close()
 
     # Set the session id as an http only cookie
@@ -73,10 +84,13 @@ def logout_endpoint():
 
     # Sign out the user
     conn = get_db_connection()
-    sign_out(conn, session_id)
+    user_auth.sign_out(conn, session_id)
     conn.close()
 
-    return jsonify({"message": "Logged out"}), 200
+    # Delete the session id cookie
+    response = jsonify({"message": "Logged out"})
+    response.delete_cookie("session_id")
+    return response, 200
 
 
 @auth_bp.route("/auth/get-user-id", methods=["GET"])
@@ -88,8 +102,11 @@ def get_user_id_endpoint():
 
     # Get the user id from the session id
     conn = get_db_connection()
-    user_id = get_user_id_by_session_id(conn, session_id)
+    user_id = user_auth.get_user_id_by_session_id(conn, session_id)
     conn.close()
+
+    if user_id is None:
+        return jsonify({"message": "Invalid session"}), 400
 
     return jsonify({"message": "Get user id successful", "user_id": user_id}), 200
 
@@ -112,12 +129,12 @@ def delete_user_endpoint():
     conn = get_db_connection()
 
     # Check if the user exists
-    user = get_user_by_username(conn, username)
+    user = user_auth.get_user_by_username(conn, username)
     if user is None:
         return jsonify({"message": "User not found"}), 400
 
     # Check the session matches the user
-    user_id = get_user_id_by_session_id(conn, session_id)
+    user_id = user_auth.get_user_id_by_session_id(conn, session_id)
     if user_id is None or user_id != user["user_id"]:
         return jsonify({"message": "Invalid session"}), 400
 
@@ -126,7 +143,7 @@ def delete_user_endpoint():
         return jsonify({"message": "Invalid password"}), 400
 
     # Delete the user
-    delete_user(conn, user["user_id"])
+    user_auth.delete_user(conn, user["user_id"])
     conn.close()
 
     return jsonify({"message": "User deleted"}), 200

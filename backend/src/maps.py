@@ -1,10 +1,7 @@
-import os
 import googlemaps
-from dotenv import load_dotenv, get_key
+from dotenv import get_key
 
-load_dotenv()
-
-GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+GOOGLE_MAPS_API_KEY = get_key(".env", "GOOGLE_MAPS_API_KEY")
 
 def query_places_from_maps(latitude: float, longitude: float, search: str, radius=5000, max_results=10) -> list:
     if not GOOGLE_MAPS_API_KEY:

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from src.maps import find_local_doctors, geocode_address
+from maps import find_local_doctors, geocode_address
 
 doctors_bp = Blueprint("doctors", __name__)
 
