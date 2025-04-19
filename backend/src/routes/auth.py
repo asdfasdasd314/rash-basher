@@ -12,6 +12,7 @@ def login_endpoint():
     # Get username and password from request
     username = request.json.get("username")
     password = request.json.get("password")
+    print(username, password)
 
     # Check if username and password are valid
     if not username or not password:
@@ -146,4 +147,11 @@ def delete_user_endpoint():
     user_auth.delete_user(conn, user["user_id"])
     conn.close()
 
-    return jsonify({"message": "User deleted"}), 200
+    # Also clear the session
+    user_auth.sign_out(conn, session_id)
+    conn.close()
+
+    response = jsonify({"message": "User deleted"})
+    response.delete_cookie("session_id")
+
+    return response, 200
