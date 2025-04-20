@@ -21,4 +21,4 @@ backend/*.sqlite
 backend/*.sqlite3
 
 # Python
-__pycache__
+**/__pycache__/
