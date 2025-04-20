@@ -46,8 +46,8 @@ def login_endpoint():
 @auth_bp.route("/auth/signup", methods=["POST"])
 def signup_endpoint():
     # Get username and password from request
-    username = request.json.get("username")
-    password = request.json.get("password")
+    username = str(request.json.get("username"))
+    password = str(request.json.get("password"))
 
     # Check if username and password are valid
     if not username or not password:

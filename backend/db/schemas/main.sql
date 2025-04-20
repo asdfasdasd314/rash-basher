@@ -6,12 +6,16 @@ CREATE TABLE users (
     store_classifications BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE TABLE classification (
+CREATE TABLE classifications (
     classification_id TEXT PRIMARY KEY NOT NULL UNIQUE,
     user_id TEXT NOT NULL,
     classification TEXT NOT NULL,
     classified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    image BLOB
+
+    --Image attributes
+    filename TEXT,
+    data BLOB,
+    content_type TEXT
 );
 
 CREATE TABLE sessions (

@@ -18,31 +18,42 @@ def query_places_from_maps(latitude: float, longitude: float, search: str, radiu
             type='health'
         )
         
+        if 'error_message' in places_result:
+            raise Exception(f"Google Maps API error: {places_result['error_message']}")
+            
+        if 'results' not in places_result:
+            raise Exception("Unexpected API response format")
+            
         places = []
         for place in places_result.get('results', [])[:max_results]:
-            # Get detailed place information
-            place_details = gmaps.place(place['place_id'], fields=[
-                'name', 'formatted_address', 'formatted_phone_number',
-                'opening_hours', 'rating', 'user_ratings_total', 'website'
-            ])['result']
-            
-            place_info = {
-                'name': place_details.get('name', ''),
-                'address': place_details.get('formatted_address', ''),
-                'phone': place_details.get('formatted_phone_number', 'N/A'),
-                'rating': place_details.get('rating', 'N/A'),
-                'total_ratings': place_details.get('user_ratings_total', 0),
-                'website': place_details.get('website', 'N/A'),
-                'is_open': place_details.get('opening_hours', {}).get('open_now', False),
-                'location': {
-                    'lat': place['geometry']['location']['lat'],
-                    'lng': place['geometry']['location']['lng']
+            try:
+                # Get detailed place information
+                place_details = gmaps.place(place['place_id'], fields=[
+                    'name', 'formatted_address', 'formatted_phone_number',
+                    'opening_hours', 'rating', 'user_ratings_total', 'website'
+                ])['result']
+                
+                place_info = {
+                    'name': place_details.get('name', ''),
+                    'address': place_details.get('formatted_address', ''),
+                    'phone': place_details.get('formatted_phone_number', 'N/A'),
+                    'rating': place_details.get('rating', 'N/A'),
+                    'total_ratings': place_details.get('user_ratings_total', 0),
+                    'website': place_details.get('website', 'N/A'),
+                    'is_open': place_details.get('opening_hours', {}).get('open_now', False),
+                    'location': {
+                        'lat': place['geometry']['location']['lat'],
+                        'lng': place['geometry']['location']['lng']
+                    }
                 }
-            }
-            places.append(place_info)
+                places.append(place_info)
+            except Exception as e:
+                continue
             
         return places
         
+    except googlemaps.exceptions.ApiError as e:
+        raise Exception(f"Google Maps API error: {str(e)}")
     except Exception as e:
         raise Exception(f"Error fetching data from Google Maps: {str(e)}")
 
@@ -75,7 +86,7 @@ def find_local_doctors(latitude, longitude, radius=5000, max_results=10):
     Returns:
         list: List of doctor information dictionaries
     """
-    return query_places_from_maps(latitude, longitude, "doctor medical clinic hospital", radius, max_results)
+    return query_places_from_maps(latitude, longitude, "doctor medical clinic", radius, max_results)
 
 
 def geocode_address(address: str):
@@ -130,5 +141,7 @@ def reverse_geocode_address(latitude: float, longitude: float):
         location = address_result[0]['formatted_address']
         return location
 
+    except googlemaps.exceptions.ApiError as e:
+        raise Exception(f"Google Maps API error: {str(e)}")
     except Exception as e:
         raise Exception(f"Error geocoding address: {str(e)}")
