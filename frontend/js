@@ -1,0 +1,121 @@
+// App.js
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import HomeScreen from './screens/HomeScreen';
+import ConditionList from './screens/ConditionList';
+import ConditionDetail from './screens/ConditionDetail';
+import UploadScreen from './screens/UploadScreen';
+
+const Stack = createNativeStackNavigator();
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Home">
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Conditions" component={ConditionList} />
+        <Stack.Screen name="Detail" component={ConditionDetail} />
+        <Stack.Screen name="Scan" component={UploadScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+// screens/HomeScreen.js
+import React from 'react';
+import { View, Text, Button } from 'react-native';
+
+export default function HomeScreen({ navigation }) {
+  return (
+    <View className="flex-1 justify-center items-center bg-white">
+      <Text className="text-2xl font-bold mb-4">Welcome to DermaScan</Text>
+      <Button title="View Skin Conditions" onPress={() => navigation.navigate('Conditions')} />
+      <Button title="Scan Your Skin" onPress={() => navigation.navigate('Scan')} />
+    </View>
+  );
+}
+
+// screens/ConditionList.js
+import React from 'react';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+
+const conditions = [
+  { id: '1', name: 'Acne' },
+  { id: '2', name: 'Eczema' },
+  { id: '3', name: 'Psoriasis' },
+  { id: '4', name: 'Melanoma' },
+];
+
+export default function ConditionList({ navigation }) {
+  return (
+    <View className="flex-1 bg-white p-4">
+      <Text className="text-xl font-bold mb-2">Common Skin Conditions</Text>
+      <FlatList
+        data={conditions}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => navigation.navigate('Detail', { condition: item })}>
+            <Text className="text-base p-2 bg-gray-100 rounded mb-2">{item.name}</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  );
+}
+
+// screens/ConditionDetail.js
+import React from 'react';
+import { View, Text } from 'react-native';
+
+export default function ConditionDetail({ route }) {
+  const { condition } = route.params;
+
+  return (
+    <View className="flex-1 bg-white p-4">
+      <Text className="text-2xl font-bold mb-2">{condition.name}</Text>
+      <Text className="text-base">Here you would display symptoms, causes, treatment, etc. for {condition.name}.</Text>
+    </View>
+  );
+}
+
+// screens/UploadScreen.js
+import React from 'react';
+import { View, Text, Button } from 'react-native';
+
+export default function UploadScreen() {
+  return (
+    <View className="flex-1 justify-center items-center bg-white">
+      <Text className="text-xl font-bold mb-4">Scan Your Skin</Text>
+      <Text className="text-base mb-4">This is where you'd upload or take a picture of the skin issue.</Text>
+      <Button title="Upload Image" onPress={() => alert('Upload functionality coming soon!')} />
+    </View>
+  );
+}
+// screens/HomeScreen.js
+import React from 'react';
+import { View, Text, TouchableOpacity, FlatList } from 'react-native';
+
+const conditions = [
+  { id: '1', name: 'Acne' },
+  { id: '2', name: 'Eczema' },
+  { id: '3', name: 'Psoriasis' },
+  { id: '4', name: 'Melanoma' },
+];
+
+export default function ConditionList({ navigation }) {
+  return (
+    <View className="flex-1 bg-white p-4">
+      <Text className="text-xl font-bold mb-2">Common Skin Conditions</Text>
+      <FlatList
+        data={conditions}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => navigation.navigate('Detail', { condition: item })}>
+            <Text className="text-base p-2 bg-gray-100 rounded mb-2">{item.name}</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  );
+}
