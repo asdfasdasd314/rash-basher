@@ -13,12 +13,12 @@ export default function SettingsScreen() {
         <IconSymbol
           size={310}
           color="#808080"
-          name="gear"
+          name="person.fill"
           style={styles.headerImage}
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Settings</ThemedText>
+        <ThemedText type="title">Doctors</ThemedText>
       </ThemedView>
 
       <ThemedView style={styles.section}>
