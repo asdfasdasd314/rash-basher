@@ -12,12 +12,12 @@ export default function ProfileScreen() {
         <IconSymbol
           size={310}
           color="#808080"
-          name="person.circle.fill"
-          style={styles.headerImage}
+          name="bandage.fill"
+          style={styles.infoRow}
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Profile</ThemedText>
+        <ThemedText type="title">Conditions</ThemedText>
       </ThemedView>
 
       <ThemedView style={styles.section}>
