@@ -1,0 +1,6 @@
+module Pods_rashbasher {
+  umbrella header "Pods-rashbasher-umbrella.h"
+
+  export *
+  module * { export * }
+}
