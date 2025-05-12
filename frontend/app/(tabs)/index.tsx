@@ -91,9 +91,9 @@ export default function CameraScreen() {
 		)}
     	<TouchableOpacity style={styles.captureButton} onPress={async () => {
         	if (cameraRef.current) {
-				const photo = await cameraRef.current.takePictureAsync({
-					base64: true,
-					quality: 0.8,
+				const photo = await cameraRef.current?.takePictureAsync({
+					quality: 0.5,
+					base64: false,
 					exif: true,
 				});
 
@@ -102,18 +102,26 @@ export default function CameraScreen() {
 					setClassification(null);
 					setError(null);
 
+					// Create form data
+					const formData = new FormData();
+					formData.append('image', {
+						uri: photo?.uri,
+						type: 'image/jpeg',
+						name: 'photo.jpg',
+					} as any);
+
 					// Replace with whatever domain we end up using
-					const res = await fetch('https://problemsquasher.dev/classify/classify-rash', {
+					const res = await fetch('https://backend-681014983462.us-east4.run.app/classify/classify-rash', {
 						method: 'POST',
+						body: formData,
 						headers: {
-							'Content-Type': 'application/json',
+							'Content-Type': 'multipart/form-data',
 						},
-						body: JSON.stringify({ image: photo.base64 }),
 					});
 
 					try {
 						const json = await res.json();
-						setClassification(json.classification);
+						setClassification(json.result);
 					} catch (error) {
 						console.error('Error taking photo:', error);
 						setError('Error taking photo');
@@ -124,9 +132,9 @@ export default function CameraScreen() {
 					setError('Error taking photo');
 					setClassification(null);
 				}
-			}
 
-			setIsLoading(false);
+				setIsLoading(false);
+			}
 		}}>
 			<View style={styles.captureButtonInner}>
 				<IconSymbol
