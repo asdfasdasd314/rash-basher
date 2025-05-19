@@ -56,11 +56,9 @@ export default function CameraScreen() {
 			facing={type}
 			active={true}
 			onCameraReady={() => {
-				setClassification("test");
-				console.log('Camera is ready');
 			}}
 			onMountError={(error) => {
-				console.error('Camera mount error:', error);
+        setError(error.message);
 			}}
 			>
 			<View style={styles.buttonContainer}>
