@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Linking, TouchableOpacity } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -7,6 +7,7 @@ import { Switch } from 'react-native';
 import { useState, useEffect } from 'react';
 import { Doctor } from '@/types/doctor';
 import * as Location from 'expo-location';
+import { Collapsible } from '@/components/Collapsible';
 
 export default function SettingsScreen() {
     const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -52,6 +53,17 @@ export default function SettingsScreen() {
         onMount();
     }, []);
 
+    const openWebsite = async (url: string) => {
+        if (url !== 'N/A') {
+            await Linking.openURL(url);
+        }
+    };
+
+    const openMaps = async (address: string) => {
+        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+        await Linking.openURL(mapsUrl);
+    };
+
     return (
         <ParallaxScrollView
             headerBackgroundColor={{ light: '#F5F5F5', dark: '#1A1A1A' }}
@@ -67,21 +79,62 @@ export default function SettingsScreen() {
             {errorMsg && <ThemedText>{errorMsg}</ThemedText>}
 
             {doctors.length > 0 &&
-                <View>
+                <View style={styles.doctorsContainer}>
                     <ThemedView style={styles.titleContainer}>
                         <ThemedText type="title">Doctors</ThemedText>
                     </ThemedView>
 
-                    {doctors.map((doctor) => (
-                        <View key={doctor.name}>
-                            <ThemedText>{doctor.name}</ThemedText>
-                            <ThemedText>{doctor.address}</ThemedText>
-                            <ThemedText>{doctor.phone}</ThemedText>
-                            <ThemedText>{doctor.rating}</ThemedText>
-                            <ThemedText>{doctor.total_ratings}</ThemedText>
-                            <ThemedText>{doctor.website}</ThemedText>
-                            <ThemedText>{doctor.is_open}</ThemedText>
-                        </View>
+                    {doctors.map((doctor, index) => (
+                        <ThemedView key={doctor.name} style={styles.doctorCard}>
+                            <ThemedText type="defaultSemiBold" style={styles.doctorNumber}>
+                                {index + 1}.
+                            </ThemedText>
+                            <View style={styles.collapsibleContainer}>
+                                <Collapsible 
+                                    title={
+                                        <View style={styles.doctorHeader}>
+                                            <ThemedText type="defaultSemiBold" style={styles.doctorName}>
+                                                {doctor.name}
+                                            </ThemedText>
+                                            <View style={styles.ratingContainer}>
+                                                <IconSymbol name="star.fill" size={16} color="#FFD700" />
+                                                <ThemedText>
+                                                    {doctor.rating} ({doctor.total_ratings})
+                                                </ThemedText>
+                                            </View>
+                                        </View>
+                                    }
+                                >
+                                    <ThemedView style={styles.doctorInfo}>
+                                        <TouchableOpacity onPress={() => openMaps(doctor.address)}>
+                                            <View style={styles.infoRow}>
+                                                <IconSymbol name="location.fill" size={16} color="#808080" style={styles.icon} />
+                                                <ThemedText style={[styles.linkText, styles.wrappedText]}>{doctor.address}</ThemedText>
+                                            </View>
+                                        </TouchableOpacity>
+                                        <View style={styles.infoRow}>
+                                            <IconSymbol name="phone.fill" size={16} color="#808080" style={styles.icon} />
+                                            <ThemedText style={styles.wrappedText}>{doctor.phone}</ThemedText>
+                                        </View>
+                                        {doctor.website !== 'N/A' && (
+                                            <TouchableOpacity onPress={() => openWebsite(doctor.website)}>
+                                                <View style={styles.infoRow}>
+                                                    <IconSymbol name="globe" size={16} color="#808080" style={styles.icon} />
+                                                    <ThemedText style={[styles.linkText, styles.wrappedText]}>{doctor.website}</ThemedText>
+                                                </View>
+                                            </TouchableOpacity>
+                                        )}
+                                        <View style={styles.infoRow}>
+                                            <IconSymbol name={doctor.is_open ? "checkmark.circle.fill" : "xmark.circle.fill"} 
+                                                       size={16} 
+                                                       color={doctor.is_open ? "#4CAF50" : "#F44336"}
+                                                       style={styles.icon} />
+                                            <ThemedText style={styles.wrappedText}>Status: {doctor.is_open ? "Open" : "Closed"}</ThemedText>
+                                        </View>
+                                    </ThemedView>
+                                </Collapsible>
+                            </View>
+                        </ThemedView>
                     ))}
                 </View>
             }
@@ -103,6 +156,9 @@ const styles = StyleSheet.create({
         left: -35,
         position: 'absolute',
     },
+    doctorsContainer: {
+        padding: 16,
+    },
     titleContainer: {
         flexDirection: 'row',
         gap: 8,
@@ -122,5 +178,61 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
+    },
+    doctorCard: {
+        flexDirection: 'row',
+        padding: 16,
+        marginBottom: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 12,
+        gap: 12,
+    },
+    doctorNumber: {
+        fontSize: 18,
+        minWidth: 30,
+    },
+    collapsibleContainer: {
+        flex: 1,
+    },
+    doctorHeader: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingRight: 8,
+    },
+    doctorName: {
+        flex: 1,
+        marginRight: 8,
+    },
+    ratingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    doctorInfo: {
+        flex: 1,
+        gap: 4,
+        marginTop: 8,
+        paddingLeft: 24,
+        paddingRight: 8,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+        marginBottom: 4,
+        paddingRight: 8,
+    },
+    icon: {
+        marginTop: 2,
+    },
+    wrappedText: {
+        flex: 1,
+        flexWrap: 'wrap',
+    },
+    linkText: {
+        color: '#0a7ea4',
+        textDecorationLine: 'underline',
     },
 }); 
