@@ -3,7 +3,6 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { Switch } from 'react-native';
 import { useState, useEffect } from 'react';
 import { Doctor } from '@/types/doctor';
 import * as Location from 'expo-location';
@@ -11,7 +10,6 @@ import { Collapsible } from '@/components/Collapsible';
 
 export default function SettingsScreen() {
     const [doctors, setDoctors] = useState<Doctor[]>([]);
-    const [location, setLocation] = useState<Location.LocationObject | null>(null);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     useEffect(() => {
         async function onMount() {
@@ -22,7 +20,6 @@ export default function SettingsScreen() {
             }
       
             let location = await Location.getCurrentPositionAsync({});
-            setLocation(location);
 
             // const response = await fetch('https://backend-681014983462.us-east4.run.app/doctors/find-dermatologists', {
             //     method: 'POST',
@@ -66,7 +63,8 @@ export default function SettingsScreen() {
 
     return (
         <ParallaxScrollView
-            headerBackgroundColor={{ light: '#F5F5F5', dark: '#1A1A1A' }}
+            // headerBackgroundColor={{ light: '#F5F5F5', dark: '#1A1A1A' }}
+            headerBackgroundColor={{ light: '#E6E6FA', dark: '#2D2D3D' }}
             headerImage={
                 <IconSymbol
                     size={310}
@@ -152,7 +150,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
     headerImage: {
         color: '#808080',
-        bottom: -90,
+        bottom: -50,
         left: -35,
         position: 'absolute',
     },

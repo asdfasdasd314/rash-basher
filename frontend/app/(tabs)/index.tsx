@@ -7,6 +7,10 @@ import { Button } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Classification } from '@/types/classification';
+import * as FileSystem from 'expo-file-system';
+import * as Crypto from 'expo-crypto';
 
 export default function CameraScreen() {
   const [type, setType] = useState<CameraType>('back');
@@ -120,6 +124,41 @@ export default function CameraScreen() {
 					try {
 						const json = await res.json();
 						setClassification(json.result);
+
+						const hash = await Crypto.digestStringAsync(
+							Crypto.CryptoDigestAlgorithm.SHA256,
+							photo.uri,
+						);
+
+						const fileName = `${hash}.jpg`;
+						const filePath = `${FileSystem.documentDirectory}${fileName}`;
+
+						// Copy the image to app's local file storage
+						await FileSystem.copyAsync({
+							from: photo.uri,
+							to: filePath,
+						});
+
+						const history = await AsyncStorage.getItem('classificationHistory');
+						if (history) {
+							const parsedHistory = JSON.parse(history);
+							const entry: Classification = {
+								timestamp: new Date(),
+								imagePath: filePath,
+								classification: json.result,
+								confidence: 1.0,
+							}
+							parsedHistory.push(entry);
+							await AsyncStorage.setItem('classificationHistory', JSON.stringify(parsedHistory));
+						} else {
+							const history: Classification[] = [{
+								timestamp: new Date(),
+								imagePath: filePath,
+								classification: json.result,
+								confidence: 1.0,
+							}];
+							await AsyncStorage.setItem('classificationHistory', JSON.stringify(history));
+						}
 					} catch (error) {
 						console.error('Error taking photo:', error);
 						setError('Error taking photo');
