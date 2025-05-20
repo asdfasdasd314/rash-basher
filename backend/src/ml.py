@@ -27,33 +27,33 @@ def classify_image(image_bytes: bytes) -> dict:
               Returns "nonr" as class if confidence is less than 50%
     """
     try:
-        # Convert bytes to PIL Image
+        # bytes to Image
         img = Image.open(io.BytesIO(image_bytes))
         
-        # Resize image to match model's expected input size
+        # Resize 
         img = img.resize((224, 224))
         
-        # Convert PIL Image to numpy array
+        #Image to numpy array
         img_array = np.array(img)
         
-        # Add batch dimension and normalize pixel values
+        # Add batch dimensions/normalize pixel values
         img_array = np.expand_dims(img_array, axis=0)
         img_array = img_array.astype('float32') / 255.0
         
-        # Make prediction
+        # prediction
         predictions = model.predict(img_array)
         
-        # Get the class with highest probability
+        #  highest prob
         predicted_class = np.argmax(predictions[0])
         confidence = float(predictions[0][predicted_class])
         
-        # Map the predicted class index to actual class label
+        # Map class index to label
         class_labels = ['class1', 'class2', 'class3']  # Replace with your actual class labels
         
         # Return "nonr" if confidence is less than 50%
         if confidence < 0.5:
             return {
-                'class': 'nonr',
+                'class': 'none',
                 'confidence': confidence
             }
         
