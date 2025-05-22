@@ -1,5 +1,5 @@
-from keras.models import load_model
-import numpy as np 
+import tensorflow as tf
+import numpy as np
 import os
 import io
 from PIL import Image
@@ -7,18 +7,24 @@ from PIL import Image
 # Get the absolute path to the model file
 current_dir = os.path.dirname(os.path.abspath(__file__))  # Get current file's directory
 backend_dir = os.path.dirname(current_dir)  # Go up one level to backend directory
-MODEL_PATH = os.path.join(backend_dir, "models", "rash_classifier.h5")
+
+MODEL_PATH = os.path.join(backend_dir, "models", "rash_classifier.tflite")
 
 print(f"Attempting to load model from: {MODEL_PATH}")  # Debug print
 
 try:
-    model = load_model(MODEL_PATH)
+    interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+    interpreter.allocate_tensors()
+
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
     print("Model loaded successfully!")  # Debug print
 except Exception as e:
     print(f"Error loading model: {str(e)}")  # More detailed error message
     raise RuntimeError(f"Failed to load model at {MODEL_PATH}: {e}")
 
-print(model.input_shape)
+print(input_details)
+print(output_details)
 
 def classify_image(image_bytes: bytes) -> dict:
     """
@@ -46,7 +52,9 @@ def classify_image(image_bytes: bytes) -> dict:
         img_array = img_array.astype('float32') / 255.0
         
         # Make prediction
-        predictions = model.predict(img_array)
+        interpreter.set_tensor(input_details[0]['index'], img_array)
+        interpreter.invoke()
+        predictions = interpreter.get_tensor(output_details[0]['index'])
         
         # Get the class with highest probability
         predicted_class = np.argmax(predictions[0])
