@@ -1,2 +1,75 @@
-def classify_image(image: bytes) -> str:
-    return "scoliosis"
+from keras.models import load_model
+from keras.preprocessing import image
+import numpy as np 
+import tensorflow as tf
+import os
+import io
+from PIL import Image
+
+# Get the absolute path to the model file
+current_dir = os.path.dirname(os.path.abspath(__file__))  # Get current file's directory
+backend_dir = os.path.dirname(current_dir)  # Go up one level to backend directory
+MODEL_PATH = os.path.join(backend_dir, "models", "rash_classifier.h5")
+
+print(f"Attempting to load model from: {MODEL_PATH}")  # Debug print
+
+try:
+    model = load_model(MODEL_PATH)
+    print("Model loaded successfully!")  # Debug print
+except Exception as e:
+    print(f"Error loading model: {str(e)}")  # More detailed error message
+    raise RuntimeError(f"Failed to load model at {MODEL_PATH}: {e}")
+
+print(model.input_shape)
+
+def classify_image(image_bytes: bytes) -> dict:
+    """
+    Classify an image using the loaded CNN model.
+    
+    Args:
+        image_bytes (bytes): The image data in bytes format
+        
+    Returns:
+        dict: Dictionary containing predicted class and confidence score.
+              Returns "nonr" as class if confidence is less than 50%
+    """
+    try:
+        # Convert bytes to PIL Image
+        img = Image.open(io.BytesIO(image_bytes))
+        
+        # Resize image to match model's expected input size
+        img = img.resize((224, 224))
+        
+        # Convert PIL Image to numpy array
+        img_array = np.array(img)
+        
+        # Add batch dimension and normalize pixel values
+        img_array = np.expand_dims(img_array, axis=0)
+        img_array = img_array.astype('float32') / 255.0
+        
+        # Make prediction
+        predictions = model.predict(img_array)
+        
+        # Get the class with highest probability
+        predicted_class = np.argmax(predictions[0])
+        confidence = float(predictions[0][predicted_class])
+        
+        # Map the predicted class index to actual class label
+        class_labels = ['actinic keratoses and intraepithelial carcinomae', 'basal cell carcinoma',  'benign keratosis-like lesions', 'dermatofibroma', 'melanoma', 'melanocytic nevi', 'pyogenic granulomas and hemorrhage', 'melanoma']  # Replace with your actual class labels
+        
+        # Return "nonr" if confidence is less than 50%
+        if confidence < 0.5:
+            return {
+                'class': 'none',
+                'confidence': confidence
+            }
+        
+        predicted_label = class_labels[predicted_class]
+        
+        return {
+            'class': predicted_label,
+            'confidence': confidence
+        }
+        
+    except Exception as e:
+        raise RuntimeError(f"Error during image classification: {str(e)}")
