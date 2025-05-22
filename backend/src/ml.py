@@ -1,7 +1,5 @@
 from keras.models import load_model
-from keras.preprocessing import image
 import numpy as np 
-import tensorflow as tf
 import os
 import io
 from PIL import Image
@@ -38,7 +36,7 @@ def classify_image(image_bytes: bytes) -> dict:
         img = Image.open(io.BytesIO(image_bytes))
         
         # Resize image to match model's expected input size
-        img = img.resize((224, 224))
+        img = img.resize((28, 28))
         
         # Convert PIL Image to numpy array
         img_array = np.array(img)
