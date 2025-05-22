@@ -73,7 +73,3 @@ def classify_image(image_bytes: bytes) -> dict:
         
     except Exception as e:
         raise RuntimeError(f"Error during image classification: {str(e)}")
-
-
-
-

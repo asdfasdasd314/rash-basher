@@ -77,4 +77,4 @@ def find_dermatologists_endpoint():
             return jsonify({"error": str(e)}), 500
             
     except Exception as e:
-        return jsonify({"error": "An unexpected error occurred"}), 500
+        return jsonify({"error": str(e)}), 500

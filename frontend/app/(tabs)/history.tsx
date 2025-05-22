@@ -1,99 +1,174 @@
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity, Image, RefreshControl, View, Modal, Dimensions } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { useEffect, useState, useCallback } from 'react';
+import { Classification } from '@/types/classification';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
+import { useColorScheme } from '@/hooks/useColorScheme';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+const clearAll = async () => {
+    const data = await AsyncStorage.getItem('classificationHistory');
+    if (data) {
+        const entries = JSON.parse(data);
+        for (const entry of entries) {
+            try {
+                await FileSystem.deleteAsync(entry.imagePath, { idempotent: true });
+            } catch (e) {
+                console.warn(`Couldn't delete file ${entry.imagePath}`, e);
+            }
+        }
+        await AsyncStorage.removeItem('classificationHistory');
+    }
+};
 
 export default function HistoryScreen() {
+    const [history, setHistory] = useState<Classification[]>([]);
+    const [classifications, setClassifications] = useState<Classification[]>([]);
+    const [refreshing, setRefreshing] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const colorScheme = useColorScheme() ?? 'light';
+
+    const loadHistory = async () => {
+        const retrievedHistory = await AsyncStorage.getItem('classificationHistory');
+        if (retrievedHistory) {
+            const parsedHistory = JSON.parse(retrievedHistory);
+            // Sort by timestamp in descending order (most recent first)
+            parsedHistory.sort((a: Classification, b: Classification) => 
+                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            );
+            setHistory(parsedHistory);
+            setClassifications(parsedHistory);
+        } else {
+            setHistory([]);
+            setClassifications([]);
+        }
+    };
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+            await loadHistory();
+        } finally {
+            setRefreshing(false);
+        }
+    }, []);
+
+    const handleClearAll = async () => {
+        await clearAll();
+        setClassifications([]);
+        await loadHistory();
+    };
+
+    useEffect(() => {
+        loadHistory();
+    }, []);
+
     return (
-        <ParallaxScrollView
-            headerBackgroundColor={{ light: '#F5F5F5', dark: '#1A1A1A' }}
-            headerImage={
-                <IconSymbol
-                    size={310}
-                    color="#808080"
-                    name="clock.fill"
-                    style={styles.headerImage}
-                />
-            }>
-            <ThemedView style={styles.titleContainer}>
-                <ThemedText type="title">Analysis History</ThemedText>
-            </ThemedView>
-
-            {/* Recent Analyses */}
-            <ThemedView style={styles.section}>
-                <ThemedText type="subtitle">Recent Analyses</ThemedText>
-                <ThemedView style={styles.analysisCard}>
-                    <ThemedView style={styles.cardHeader}>
-                        <IconSymbol name="calendar" size={20} color="#808080" />
-                        <ThemedText>Today, 2:30 PM</ThemedText>
-                    </ThemedView>
-                    <ThemedView style={styles.cardContent}>
-                        <ThemedView style={styles.imagePreview}>
-                            <IconSymbol name="photo.fill" size={40} color="#808080" />
-                        </ThemedView>
-                        <ThemedView style={styles.analysisInfo}>
-                            <ThemedText type="defaultSemiBold">Right Arm Analysis</ThemedText>
-                            <ThemedText>Mild irritation detected</ThemedText>
-                        </ThemedView>
-                    </ThemedView>
+        <>
+            <ParallaxScrollView
+                headerBackgroundColor={{ light: '#E6E6FA', dark: '#2D2D3D' }}
+                headerImage={
+                    <IconSymbol
+                        size={310}
+                        color="#808080"
+                        name="clock.fill"
+                        style={styles.headerImage}
+                    />
+                }
+                refreshing={refreshing}
+                onRefresh={onRefresh}>
+                <ThemedView style={styles.titleContainer}>
+                    <ThemedText type="title">Analysis History</ThemedText>
+                    <TouchableOpacity 
+                        style={styles.clearButton}
+                        onPress={handleClearAll}
+                    >
+                        <IconSymbol name="trash" size={20} color="#FF3B30" />
+                        <ThemedText style={styles.clearButtonText}>Clear All</ThemedText>
+                    </TouchableOpacity>
                 </ThemedView>
 
-                <ThemedView style={styles.analysisCard}>
-                    <ThemedView style={styles.cardHeader}>
-                        <IconSymbol name="calendar" size={20} color="#808080" />
-                        <ThemedText>Yesterday, 4:15 PM</ThemedText>
-                    </ThemedView>
-                    <ThemedView style={styles.cardContent}>
-                        <ThemedView style={styles.imagePreview}>
-                            <IconSymbol name="photo.fill" size={40} color="#808080" />
+                {/* Recent Analyses */}
+                <ThemedView style={styles.section}>
+                    <ThemedText type="subtitle">Recent Analyses</ThemedText>
+                    {classifications.length === 0 ? (
+                        <ThemedView style={styles.emptyState}>
+                            <IconSymbol name="clock" size={40} color="#808080" />
+                            <ThemedText style={styles.emptyStateText}>No analyses yet</ThemedText>
                         </ThemedView>
-                        <ThemedView style={styles.analysisInfo}>
-                            <ThemedText type="defaultSemiBold">Left Leg Analysis</ThemedText>
-                            <ThemedText>Moderate rash detected</ThemedText>
-                        </ThemedView>
-                    </ThemedView>
+                    ) : (
+                        classifications.map((classification) => (
+                            <ThemedView key={new Date(classification.timestamp).toLocaleString()} style={styles.analysisCard}>
+                                <ThemedText type="defaultSemiBold">{new Date(classification.timestamp).toLocaleString()}</ThemedText>
+                                <View style={styles.infoRow}>
+                                    <IconSymbol name="heart.text.square" size={16} color="#808080" style={styles.icon} />
+                                    <ThemedText>{classification.classification}</ThemedText>
+                                </View>
+                                <View style={styles.infoRow}>
+                                    <IconSymbol name="gauge" size={16} color="#808080" style={styles.icon} />
+                                    <ThemedText>{classification.confidence * 100}%</ThemedText>
+                                </View>
+                                {classification.imagePath && (
+                                    <TouchableOpacity 
+                                        onPress={() => setSelectedImage(classification.imagePath)}
+                                        style={styles.imageContainer}
+                                    >
+                                        <Image 
+                                            source={{ uri: classification.imagePath }} 
+                                            style={styles.imagePreview}
+                                            resizeMode="cover"
+                                        />
+                                    </TouchableOpacity>
+                                )}
+                            </ThemedView>
+                        ))
+                    )}
                 </ThemedView>
-            </ThemedView>
+            </ParallaxScrollView>
 
-            {/* Statistics */}
-            <ThemedView style={styles.section}>
-                <ThemedText type="subtitle">Statistics</ThemedText>
-                <ThemedView style={styles.statsContainer}>
-                    <ThemedView style={styles.statCard}>
-                        <IconSymbol name="chart.bar.fill" size={24} color="#4CAF50" />
-                        <ThemedText type="defaultSemiBold">12</ThemedText>
-                        <ThemedText>Total Scans</ThemedText>
-                    </ThemedView>
-                    <ThemedView style={styles.statCard}>
-                        <IconSymbol name="clock.arrow.circlepath" size={24} color="#2196F3" />
-                        <ThemedText type="defaultSemiBold">3</ThemedText>
-                        <ThemedText>This Week</ThemedText>
-                    </ThemedView>
-                </ThemedView>
-            </ThemedView>
-
-            {/* Export Option */}
-            <TouchableOpacity>
-                <ThemedView style={styles.exportButton}>
-                    <IconSymbol name="square.and.arrow.up" size={20} color="#808080" />
-                    <ThemedText>Export Analysis History</ThemedText>
-                </ThemedView>
-            </TouchableOpacity>
-        </ParallaxScrollView>
+            {/* Full Screen Image Modal */}
+            <Modal
+                visible={selectedImage !== null}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setSelectedImage(null)}
+            >
+                <TouchableOpacity 
+                    style={styles.modalContainer}
+                    activeOpacity={1}
+                    onPress={() => setSelectedImage(null)}
+                >
+                    <View style={styles.modalContent}>
+                        {selectedImage && (
+                            <Image
+                                source={{ uri: selectedImage }}
+                                style={styles.fullScreenImage}
+                                resizeMode="contain"
+                            />
+                        )}
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+        </>
     );
 }
 
 const styles = StyleSheet.create({
     headerImage: {
         color: '#808080',
-        bottom: -90,
+        bottom: -50,
         left: -35,
         position: 'absolute',
     },
     titleContainer: {
         flexDirection: 'row',
-        gap: 8,
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 16,
     },
     section: {
@@ -115,6 +190,9 @@ const styles = StyleSheet.create({
     cardContent: {
         flexDirection: 'row',
         gap: 16,
+    },
+    imageContainer: {
+        marginTop: 8,
     },
     imagePreview: {
         width: 80,
@@ -151,5 +229,52 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         marginTop: 8,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    icon: {
+        marginTop: 2,
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: screenWidth,
+        height: screenHeight,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    fullScreenImage: {
+        width: screenWidth,
+        height: screenHeight,
+    },
+    clearButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        padding: 8,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    },
+    clearButtonText: {
+        color: '#FF3B30',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    emptyState: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 32,
+        gap: 8,
+    },
+    emptyStateText: {
+        color: '#808080',
+        fontSize: 16,
     },
 }); 
