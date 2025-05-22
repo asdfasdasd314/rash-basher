@@ -111,7 +111,7 @@ export default function HistoryScreen() {
                                 </View>
                                 <View style={styles.infoRow}>
                                     <IconSymbol name="gauge" size={16} color="#808080" style={styles.icon} />
-                                    <ThemedText>{classification.confidence * 100}%</ThemedText>
+                                    <ThemedText>{Math.round(classification.confidence * 100)}%</ThemedText>
                                 </View>
                                 {classification.imagePath && (
                                     <TouchableOpacity 

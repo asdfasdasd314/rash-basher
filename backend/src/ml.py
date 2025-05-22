@@ -1,19 +1,15 @@
-import tensorflow as tf
+import tflite_runtime.interpreter as tflite
 import numpy as np
 import os
 import io
 from PIL import Image
 
-# Get the absolute path to the model file
-current_dir = os.path.dirname(os.path.abspath(__file__))  # Get current file's directory
-backend_dir = os.path.dirname(current_dir)  # Go up one level to backend directory
-
-MODEL_PATH = os.path.join(backend_dir, "models", "rash_classifier.tflite")
+MODEL_PATH = "./models/rash_classifier.tflite"
 
 print(f"Attempting to load model from: {MODEL_PATH}")  # Debug print
 
 try:
-    interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+    interpreter = tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
 
     input_details = interpreter.get_input_details()
@@ -23,6 +19,8 @@ except Exception as e:
     print(f"Error loading model: {str(e)}")  # More detailed error message
     raise RuntimeError(f"Failed to load model at {MODEL_PATH}: {e}")
 
+print("File exists:", os.path.exists(MODEL_PATH))
+print("File size:", os.path.getsize(MODEL_PATH))
 print(input_details)
 print(output_details)
 

@@ -1,21 +1,23 @@
-# Stage 1: Build stage
-FROM python:3.10-slim AS builder
+FROM python:3.11-slim AS builder
 WORKDIR /app
-RUN apt-get update && apt-get install -y build-essential gcc
+
+RUN apt-get update && apt-get install -y build-essential gcc libffi-dev libjpeg-dev zlib1g-dev
+
 COPY requirements.txt .
+
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
-COPY models/ ./models/
 
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt \
- && find /install -name '*.dist-info' -exec rm -rf {} + \
- && find /install -name '__pycache__' -exec rm -rf {} +
-
-# Stage 2: Runtime stage
-FROM python:3.10-slim
+FROM python:3.11-slim
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y libffi8 libjpeg62-turbo zlib1g
+
 COPY --from=builder /install /usr/local
+
 COPY src/ .
 COPY .env .
+
+COPY models/ ./models/
 
 EXPOSE 8080
 

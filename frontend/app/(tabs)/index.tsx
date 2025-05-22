@@ -1,6 +1,6 @@
 import { StyleSheet, View, Platform, TouchableOpacity } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from 'react-native';
@@ -16,6 +16,7 @@ export default function CameraScreen() {
   const [type, setType] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [classification, setClassification] = useState<string | null>(null);
+  const [confidence, setConfidence] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const colorScheme = useColorScheme();
@@ -79,6 +80,7 @@ export default function CameraScreen() {
 		{classification && (
 			<View style={styles.classificationContainer}>
 				<ThemedText style={styles.classificationText}>You have: {classification}</ThemedText>
+				<ThemedText style={styles.classificationText}>Confidence: {confidence ? `${Math.round(confidence * 100)}%` : 'N/A'}</ThemedText>
 			</View>
 		)}
 		{isLoading && (
@@ -123,8 +125,8 @@ export default function CameraScreen() {
 
 					try {
 						const json = await res.json();
-						setClassification(json.result);
-
+						setClassification(json.result.class);
+						setConfidence(json.result.confidence);
 						const hash = await Crypto.digestStringAsync(
 							Crypto.CryptoDigestAlgorithm.SHA256,
 							photo.uri,
@@ -145,8 +147,8 @@ export default function CameraScreen() {
 							const entry: Classification = {
 								timestamp: new Date(),
 								imagePath: filePath,
-								classification: json.result,
-								confidence: 1.0,
+								classification: json.result.class,
+								confidence: json.result.confidence,
 							}
 							parsedHistory.push(entry);
 							await AsyncStorage.setItem('classificationHistory', JSON.stringify(parsedHistory));
@@ -154,8 +156,8 @@ export default function CameraScreen() {
 							const history: Classification[] = [{
 								timestamp: new Date(),
 								imagePath: filePath,
-								classification: json.result,
-								confidence: 1.0,
+								classification: json.result.class,
+								confidence: json.result.confidence,
 							}];
 							await AsyncStorage.setItem('classificationHistory', JSON.stringify(history));
 						}
