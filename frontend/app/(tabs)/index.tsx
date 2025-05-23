@@ -1,6 +1,6 @@
-import { StyleSheet, View, Platform, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Platform, TouchableOpacity, Animated } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from 'react-native';
@@ -20,8 +20,31 @@ export default function CameraScreen() {
   const [confidence, setConfidence] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showResults, setShowResults] = useState<boolean>(true);
   const colorScheme = useColorScheme();
   const cameraRef = useRef<CameraView>(null);
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (isLoading) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(0);
+    }
+  }, [isLoading]);
 
   if (!permission) {
     // Camera permissions are still loading
@@ -54,137 +77,218 @@ export default function CameraScreen() {
   };
 
   return (
-	<View style={styles.container}>
-		<Disclaimer />
-		<View style={styles.imageContainer}>
-			<CameraView 
-			ref={cameraRef}
-			style={styles.camera} 
-			facing={type}
-			active={true}
-			onCameraReady={() => {
-			}}
-			onMountError={(error) => {
-        setError(error.message);
-			}}
-			>
-			<View style={styles.buttonContainer}>
-				<TouchableOpacity onPress={toggleCameraType} style={styles.flipButton}>
-				<IconSymbol
-					name="arrow.triangle.2.circlepath.camera.fill"
-					size={32}
-					color={Colors[colorScheme ?? 'light'].text}
-				/>
-				</TouchableOpacity>
-			</View>
-			</CameraView>
-		</View>
-		{classification && (
-			<View style={styles.classificationContainer}>
-				<ThemedText style={styles.classificationText}>You have: {classification}</ThemedText>
-				<ThemedText style={styles.classificationText}>Confidence: {confidence ? `${Math.round(confidence * 100)}%` : 'N/A'}</ThemedText>
-			</View>
-		)}
-		{isLoading && (
-			<View style={styles.classificationContainer}>
-				<ThemedText style={styles.classificationText}>Loading...</ThemedText>
-			</View>
-		)}
-		{error && (
-			<View style={styles.classificationContainer}>
-				<ThemedText style={styles.classificationText}>{error}</ThemedText>
-			</View>
-		)}
-    	<TouchableOpacity style={styles.captureButton} onPress={async () => {
-        	if (cameraRef.current) {
-				const photo = await cameraRef.current?.takePictureAsync({
-					quality: 0.5,
-					base64: false,
-					exif: true,
-				});
+    <View style={styles.container}>
+      <View style={styles.imageContainer}>
+        <CameraView 
+          ref={cameraRef}
+          style={styles.camera} 
+          facing={type}
+          active={true}
+          onCameraReady={() => {}}
+          onMountError={(error) => {
+            setError(error.message);
+          }}
+        >
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity onPress={toggleCameraType} style={styles.flipButton}>
+              <IconSymbol
+                name="arrow.triangle.2.circlepath.camera.fill"
+                size={32}
+                color={Colors[colorScheme ?? 'light'].text}
+              />
+            </TouchableOpacity>
+          </View>
+        </CameraView>
+      </View>
 
-				try {
-					setIsLoading(true);
-					setClassification(null);
-					setError(null);
+      {(isLoading || (classification && showResults)) && !error && (
+        <View style={styles.floatingCard}>
+          <Animated.View 
+            style={[
+              styles.resultCard,
+              {
+                opacity: isLoading ? pulseAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.5, 1],
+                }) : 1,
+              },
+            ]}
+          >
+            {!isLoading && (
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={() => {
+					setError(null)
+					setClassification(null)
+					setConfidence(null)
+					setShowResults(false)
+				}}
+              >
+                <IconSymbol
+                  name="xmark.circle.fill"
+                  size={24}
+                  color="#FFFFFF"
+                />
+              </TouchableOpacity>
+            )}
+            {isLoading ? (
+              <>
+                <IconSymbol
+                  name="doc.text.fill"
+                  size={48}
+                  color="#FFFFFF"
+                />
+                <ThemedText style={styles.loadingText}>Analyzing Image...</ThemedText>
+              </>
+            ) : (
+              <>
+                <View style={styles.resultHeader}>
+                  <IconSymbol
+                    name="checkmark.circle.fill"
+                    size={32}
+                    color="#4CAF50"
+                  />
+                  <ThemedText style={styles.resultTitle}>Analysis Complete</ThemedText>
+                </View>
+                <View style={styles.resultContent}>
+                  <ThemedText style={styles.classificationText}>
+                    Condition: {classification}
+                  </ThemedText>
+                  <ThemedText style={styles.confidenceText}>
+                    Confidence: {confidence ? `${Math.round(confidence * 100)}%` : 'N/A'}
+                  </ThemedText>
+                </View>
+              </>
+            )}
+          </Animated.View>
+        </View>
+      )}
 
-					// Create form data
-					const formData = new FormData();
-					formData.append('image', {
-						uri: photo?.uri,
-						type: 'image/jpeg',
-						name: 'photo.jpg',
-					} as any);
+      {error && !isLoading && (
+        <View style={styles.floatingCard}>
+          <Animated.View 
+            style={[styles.resultCard, styles.errorCard]}
+          >
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setError(null)}
+            >
+              <IconSymbol
+                name="xmark.circle.fill"
+                size={24}
+                color="#FFFFFF"
+              />
+            </TouchableOpacity>
+            <View style={styles.resultHeader}>
+              <IconSymbol
+                name="exclamationmark.triangle.fill"
+                size={32}
+                color="#FF0000"
+              />
+              <ThemedText style={styles.errorTitle}>Error</ThemedText>
+            </View>
+            <View style={styles.resultContent}>
+              <ThemedText style={styles.errorText}>{error}</ThemedText>
+            </View>
+          </Animated.View>
+        </View>
+      )}
 
-					// Replace with whatever domain we end up using
-					const res = await fetch('https://backend-681014983462.us-east4.run.app/classify/classify-rash', {
-						method: 'POST',
-						body: formData,
-						headers: {
-							'Content-Type': 'multipart/form-data',
-						},
-					});
+      <TouchableOpacity 
+        style={[styles.captureButton, isLoading && styles.captureButtonDisabled]} 
+        onPress={async () => {
+          if (cameraRef.current && !isLoading) {
+            setShowResults(true);
+            const photo = await cameraRef.current?.takePictureAsync({
+              quality: 0.5,
+              base64: false,
+              exif: true,
+            });
 
-					try {
-						const json = await res.json();
-						setClassification(json.result.class);
-						setConfidence(json.result.confidence);
-						const hash = await Crypto.digestStringAsync(
-							Crypto.CryptoDigestAlgorithm.SHA256,
-							photo.uri,
-						);
+            try {
+              setIsLoading(true);
+              setClassification(null);
+              setError(null);
 
-						const fileName = `${hash}.jpg`;
-						const filePath = `${FileSystem.documentDirectory}${fileName}`;
+              // Create form data
+              const formData = new FormData();
+              formData.append('image', {
+                uri: photo?.uri,
+                type: 'image/jpeg',
+                name: 'photo.jpg',
+              } as any);
 
-						// Copy the image to app's local file storage
-						await FileSystem.copyAsync({
-							from: photo.uri,
-							to: filePath,
-						});
+              // Replace with whatever domain we end up using
+              const res = await fetch('https://backend-681014983462.us-east4.run.app/classify/classify-rash', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'Content-Type': 'multipart/form-data',
+                },
+              });
 
-						const history = await AsyncStorage.getItem('classificationHistory');
-						if (history) {
-							const parsedHistory = JSON.parse(history);
-							const entry: Classification = {
-								timestamp: new Date(),
-								imagePath: filePath,
-								classification: json.result.class,
-								confidence: json.result.confidence,
-							}
-							parsedHistory.push(entry);
-							await AsyncStorage.setItem('classificationHistory', JSON.stringify(parsedHistory));
-						} else {
-							const history: Classification[] = [{
-								timestamp: new Date(),
-								imagePath: filePath,
-								classification: json.result.class,
-								confidence: json.result.confidence,
-							}];
-							await AsyncStorage.setItem('classificationHistory', JSON.stringify(history));
-						}
-					} catch (error) {
-						console.error('Error taking photo:', error);
-						setError('Error taking photo');
-						setClassification(null);
-					}
-				} catch (error) {
-					console.error('Error taking photo:', error);
-					setError('Error taking photo');
-					setClassification(null);
-				}
+              try {
+                const json = await res.json();
+                setClassification(json.result.class);
+                setConfidence(json.result.confidence);
+                const hash = await Crypto.digestStringAsync(
+                  Crypto.CryptoDigestAlgorithm.SHA256,
+                  photo.uri,
+                );
 
-				setIsLoading(false);
-			}
-		}}>
-			<View style={styles.captureButtonInner}>
-				<IconSymbol
-					name="camera.fill"
-					size={32}
-					color={Colors[colorScheme ?? 'light'].text}
-				/>
-			</View>
-      	</TouchableOpacity>
+                const fileName = `${hash}.jpg`;
+                const filePath = `${FileSystem.documentDirectory}${fileName}`;
+
+                // Copy the image to app's local file storage
+                await FileSystem.copyAsync({
+                  from: photo.uri,
+                  to: filePath,
+                });
+
+                const history = await AsyncStorage.getItem('classificationHistory');
+                if (history) {
+                  const parsedHistory = JSON.parse(history);
+                  const entry: Classification = {
+                    timestamp: new Date(),
+                    imagePath: filePath,
+                    classification: json.result.class,
+                    confidence: json.result.confidence,
+                  }
+                  parsedHistory.push(entry);
+                  await AsyncStorage.setItem('classificationHistory', JSON.stringify(parsedHistory));
+                } else {
+                  const history: Classification[] = [{
+                    timestamp: new Date(),
+                    imagePath: filePath,
+                    classification: json.result.class,
+                    confidence: json.result.confidence,
+                  }];
+                  await AsyncStorage.setItem('classificationHistory', JSON.stringify(history));
+                }
+              } catch (error) {
+                console.error('Error taking photo:', error);
+                setError('Error taking photo');
+                setClassification(null);
+              }
+            } catch (error) {
+              console.error('Error taking photo:', error);
+              setError('Error taking photo');
+              setClassification(null);
+            }
+
+            setIsLoading(false);
+          }
+        }}
+        disabled={isLoading}
+      >
+        <View style={styles.captureButtonInner}>
+          <IconSymbol
+            name="camera.fill"
+            size={32}
+            color={Colors[colorScheme ?? 'light'].text}
+          />
+        </View>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -230,21 +334,87 @@ const styles = StyleSheet.create({
   captureButtonInner: {
     padding: 12,
   },
-  classificationContainer: {
+  floatingCard: {
     position: 'absolute',
-    top: '50%',
+    top: 150,
     left: 0,
     right: 0,
-    transform: [{ translateY: -20 }],
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  resultCard: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    padding: 24,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 16,
+    width: '80%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  resultHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  resultTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  resultContent: {
+    width: '100%',
+    gap: 8,
   },
   classificationText: {
-    fontSize: 16,
-    color: 'white',
+    fontSize: 20,
+    color: '#FFFFFF',
     textAlign: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 10,
-    borderRadius: 8,
+  },
+  confidenceText: {
+    fontSize: 18,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    opacity: 0.8,
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  errorCard: {
+    backgroundColor: 'rgba(255, 82, 82, 0.3)',
+    borderColor: 'rgba(255, 82, 82, 0.6)',
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FF0000',
+  },
+  errorText: {
+    color: '#D00000',
+    fontSize: 18,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    opacity: 0.9,
+  },
+  captureButtonDisabled: {
+    opacity: 0.5,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    padding: 4,
   },
 });
