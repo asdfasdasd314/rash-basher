@@ -43,11 +43,7 @@ def classify_image(image_bytes: bytes) -> dict:
         img = img.resize((28, 28))
         
         # Convert PIL Image to numpy array
-        img_array = np.array(img)
-        
-        # Add batch dimension and normalize pixel values
-        img_array = np.expand_dims(img_array, axis=0)
-        img_array = img_array.astype('float32') / 255.0
+        img_array = np.array(img).reshape(-1,28,28,3).astype(np.float32)
         
         # Make prediction
         interpreter.set_tensor(input_details[0]['index'], img_array)
