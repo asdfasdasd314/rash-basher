@@ -1,11 +1,12 @@
 import { StyleSheet, View, Platform, TouchableOpacity } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Disclaimer } from '@/components/Disclaimer';
 import { Colors } from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Classification } from '@/types/classification';
@@ -53,7 +54,8 @@ export default function CameraScreen() {
   };
 
   return (
-    <View style={styles.container}>
+	<View style={styles.container}>
+		<Disclaimer />
 		<View style={styles.imageContainer}>
 			<CameraView 
 			ref={cameraRef}
