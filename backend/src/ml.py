@@ -59,7 +59,7 @@ def classify_image(image_bytes: bytes) -> dict:
         confidence = float(predictions[0][predicted_class])
         
         # Map the predicted class index to actual class label
-        class_labels = ['actinic keratoses and intraepithelial carcinomae', 'basal cell carcinoma',  'benign keratosis-like lesions', 'dermatofibroma', 'melanoma', 'melanocytic nevi', 'pyogenic granulomas and hemorrhage']  # Replace with your actual class labels
+        class_labels = ['actinic keratoses and intraepithelial carcinomae', 'basal cell carcinoma',  'benign keratosis-like lesions', 'dermatofibroma', 'melanocytic nevi', 'pyogenic granulomas and hemorrhage', 'melanoma']  # Replace with your actual class labels
         
         # Return "nonr" if confidence is less than 50%
         if confidence < 0.5:
