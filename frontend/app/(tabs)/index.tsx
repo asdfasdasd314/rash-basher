@@ -84,6 +84,7 @@ export default function CameraScreen() {
           style={styles.camera} 
           facing={type}
           active={true}
+          ratio="1:1"
           onCameraReady={() => {}}
           onMountError={(error) => {
             setError(error.message);
@@ -203,6 +204,7 @@ export default function CameraScreen() {
               quality: 0.5,
               base64: false,
               exif: true,
+              skipProcessing: false,
             });
 
             try {
@@ -298,14 +300,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#25292e',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   imageContainer: {
-    flex: 1,
     width: '100%',
+    aspectRatio: 1,
+    maxWidth: 500,
+    maxHeight: 500,
+    alignSelf: 'center',
   },
   camera: {
-    flex: 1,
     width: '100%',
+    height: '100%',
   },
   message: {
     textAlign: 'center',
