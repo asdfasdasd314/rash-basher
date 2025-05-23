@@ -62,7 +62,7 @@ def classify_image(image_bytes: bytes) -> dict:
         class_labels = ['actinic keratoses and intraepithelial carcinomae', 'basal cell carcinoma',  'benign keratosis-like lesions', 'dermatofibroma', 'melanocytic nevi', 'pyogenic granulomas and hemorrhage', 'melanoma']  # Replace with your actual class labels
         
         # Return "nonr" if confidence is less than 50%
-        if confidence < 0.5:
+        if confidence < 0.7:
             return {
                 'class': 'none',
                 'confidence': confidence
