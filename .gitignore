@@ -22,3 +22,8 @@ backend/*.sqlite3
 
 # Python
 **/__pycache__/
+
+# Virtual Environment
+backend/.venv/
+backend/venv/
+backend/ENV/

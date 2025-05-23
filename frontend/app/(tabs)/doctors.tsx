@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { Doctor } from '@/types/doctor';
 import * as Location from 'expo-location';
 import { Collapsible } from '@/components/Collapsible';
-
+import { openWebsite } from '@/utils/webNavigation';
 export default function SettingsScreen() {
     const [doctors, setDoctors] = useState<Doctor[]>([]);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -50,11 +50,6 @@ export default function SettingsScreen() {
         onMount();
     }, []);
 
-    const openWebsite = async (url: string) => {
-        if (url !== 'N/A') {
-            await Linking.openURL(url);
-        }
-    };
 
     const openMaps = async (address: string) => {
         const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
