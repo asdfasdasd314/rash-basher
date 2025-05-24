@@ -12,6 +12,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Classification } from '@/types/classification';
 import * as FileSystem from 'expo-file-system';
 import * as Crypto from 'expo-crypto';
+import Slider from '@react-native-community/slider';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function CameraScreen() {
   const [type, setType] = useState<CameraType>('back');
@@ -21,6 +23,8 @@ export default function CameraScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState<boolean>(true);
+  const [zoom, setZoom] = useState(0);
+  const [flashlight, setFlashlight] = useState(false);
   const colorScheme = useColorScheme();
   const cameraRef = useRef<CameraView>(null);
   const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -55,8 +59,26 @@ export default function CameraScreen() {
     // Camera permissions are not granted yet
     return (
       <ThemedView style={styles.container}>
-        <ThemedText style={styles.message}>We need your permission to show the camera</ThemedText>
-        <Button title="Grant Permission" onPress={requestPermission} />
+        <View style={styles.permissionOverlay}>
+          <ThemedView style={styles.permissionCard}>
+            <IconSymbol
+              name="camera.fill"
+              size={48}
+              color={Colors[colorScheme ?? 'light'].text}
+              style={styles.permissionIcon}
+            />
+            <ThemedText style={styles.permissionTitle}>Camera Access Required</ThemedText>
+            <ThemedText style={styles.permissionMessage}>
+              We need your permission to access the camera to analyze skin conditions.
+            </ThemedText>
+            <TouchableOpacity 
+              style={styles.permissionButton}
+              onPress={requestPermission}
+            >
+              <ThemedText style={styles.permissionButtonText}>Grant Permission</ThemedText>
+            </TouchableOpacity>
+          </ThemedView>
+        </View>
       </ThemedView>
     );
   }
@@ -78,220 +100,280 @@ export default function CameraScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.imageContainer}>
-        <CameraView 
-          ref={cameraRef}
-          style={styles.camera} 
-          facing={type}
-          active={true}
-          ratio="1:1"
-          onCameraReady={() => {}}
-          onMountError={(error) => {
-            setError(error.message);
-          }}
-        >
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity onPress={toggleCameraType} style={styles.flipButton}>
-              <IconSymbol
-                name="arrow.triangle.2.circlepath.camera.fill"
-                size={32}
-                color={Colors[colorScheme ?? 'light'].text}
-              />
-            </TouchableOpacity>
-          </View>
-        </CameraView>
-      </View>
-
-      {(isLoading || (classification && showResults)) && !error && (
-        <View style={styles.floatingCard}>
-          <Animated.View 
-            style={[
-              styles.resultCard,
-              {
-                opacity: isLoading ? pulseAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.5, 1],
-                }) : 1,
-              },
-            ]}
-          >
-            {!isLoading && (
-              <TouchableOpacity 
-                style={styles.closeButton}
-                onPress={() => {
-					setError(null)
-					setClassification(null)
-					setConfidence(null)
-					setShowResults(false)
+		<Disclaimer />
+		<View style={styles.imageContainer}>
+			<CameraView 
+				ref={cameraRef}
+				style={styles.camera} 
+				facing={type}
+				active={true}
+				zoom={zoom}
+				enableTorch={flashlight}
+				onCameraReady={() => {}}
+				onMountError={(error) => {
+					setError(error.message);
 				}}
-              >
-                <IconSymbol
-                  name="xmark.circle.fill"
-                  size={24}
-                  color="#FFFFFF"
-                />
-              </TouchableOpacity>
-            )}
-            {isLoading ? (
-              <>
-                <IconSymbol
-                  name="doc.text.fill"
-                  size={48}
-                  color="#FFFFFF"
-                />
-                <ThemedText style={styles.loadingText}>Analyzing Image...</ThemedText>
-              </>
-            ) : (
-              <>
-                <View style={styles.resultHeader}>
-                  <IconSymbol
-                    name="checkmark.circle.fill"
-                    size={32}
-                    color="#4CAF50"
-                  />
-                  <ThemedText style={styles.resultTitle}>Analysis Complete</ThemedText>
-                </View>
-                <View style={styles.resultContent}>
-                  <ThemedText style={styles.classificationText}>
-                    Condition: {classification}
-                  </ThemedText>
-                  <ThemedText style={styles.confidenceText}>
-                    Confidence: {confidence ? `${Math.round(confidence * 100)}%` : 'N/A'}
-                  </ThemedText>
-                </View>
-              </>
-            )}
-          </Animated.View>
-        </View>
-      )}
+			/>
+			<View style={styles.buttonContainer}>
+				<TouchableOpacity onPress={toggleCameraType} style={styles.flipButton}>
+					<IconSymbol
+						name="arrow.triangle.2.circlepath.camera.fill"
+						size={32}
+						color={Colors[colorScheme ?? 'light'].text}
+					/>
+				</TouchableOpacity>
+				<TouchableOpacity 
+					onPress={() => setFlashlight(!flashlight)} 
+					style={[styles.flipButton, { marginTop: 12 }]}
+				>
+					<IconSymbol
+						name={flashlight ? "flashlight.on.fill" : "flashlight.off.fill"}
+						size={32}
+						color={Colors[colorScheme ?? 'light'].text}
+					/>
+				</TouchableOpacity>
+			</View>
+			<View style={styles.zoomContainer}>
+				<Slider
+					style={styles.zoomSlider}
+					minimumValue={0}
+					maximumValue={1}
+					value={zoom}
+					onValueChange={setZoom}
+					minimumTrackTintColor="#FFFFFF"
+					maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+					thumbTintColor="#FFFFFF"
+				/>
+			</View>
+		</View>
 
-      {error && !isLoading && (
-        <View style={styles.floatingCard}>
-          <Animated.View 
-            style={[styles.resultCard, styles.errorCard]}
-          >
-            <TouchableOpacity 
-              style={styles.closeButton}
-              onPress={() => setError(null)}
-            >
-              <IconSymbol
-                name="xmark.circle.fill"
-                size={24}
-                color="#FFFFFF"
-              />
-            </TouchableOpacity>
-            <View style={styles.resultHeader}>
-              <IconSymbol
-                name="exclamationmark.triangle.fill"
-                size={32}
-                color="#FF0000"
-              />
-              <ThemedText style={styles.errorTitle}>Error</ThemedText>
-            </View>
-            <View style={styles.resultContent}>
-              <ThemedText style={styles.errorText}>{error}</ThemedText>
-            </View>
-          </Animated.View>
-        </View>
-      )}
+		{(isLoading || (classification && showResults)) && !error && (
+			<View style={styles.floatingCard}>
+			<Animated.View 
+				style={[
+				styles.resultCard,
+				{
+					opacity: isLoading ? pulseAnim.interpolate({
+					inputRange: [0, 1],
+					outputRange: [0.5, 1],
+					}) : 1.0,
+				},
+				]}
+			>
+				{!isLoading && (
+				<TouchableOpacity 
+					style={styles.closeButton}
+					onPress={() => {
+						setError(null)
+						setClassification(null)
+						setConfidence(null)
+						setShowResults(false)
+					}}
+				>
+					<IconSymbol
+					name="xmark.circle.fill"
+					size={20}
+					color="#FFFFFF"
+					/>
+				</TouchableOpacity>
+				)}
+				{isLoading ? (
+				<>
+					<IconSymbol
+					name="doc.text.fill"
+					size={48}
+					color="#FFFFFF"
+					/>
+					<ThemedText style={styles.loadingText}>Analyzing Image...</ThemedText>
+				</>
+				) : (
+				<>
+					<View style={styles.resultHeader}>
+					<IconSymbol
+						name="checkmark.circle.fill"
+						size={32}
+						color="#4CAF50"
+					/>
+					<ThemedText style={styles.resultTitle}>Analysis Complete</ThemedText>
+					</View>
+					<View style={styles.resultContent}>
+					<ThemedText style={styles.classificationText}>
+						Condition: {classification}
+					</ThemedText>
+					<View style={styles.confidenceMeter}>
+						<View style={styles.meterOutline}>
+						<View style={styles.meterBackground}>
+							<LinearGradient
+							colors={['#FF0000', '#FFFF00', '#00FF00']}
+							start={{ x: 0, y: 0 }}
+							end={{ x: 1, y: 0 }}
+							style={styles.meterGradient}
+							/>
+						</View>
+						</View>
+						<View style={styles.tickMarkContainer}>
+						{[-90, -60, -30, 0, 30, 60, 90].map((angle, index) => (
+							<View
+							key={index}
+							style={[
+								styles.tickMark,
+								{
+								transform: [
+									{ rotate: `${angle}deg` },
+									{ translateY: -90 },
+								],
+								},
+							]}
+							/>
+						))}
+						</View>
+						<View 
+						style={[
+							styles.meterNeedle,
+							{ transform: [{ rotate: `${-90 + (confidence || 0) * 180}deg` }] }
+						]} 
+						/>
+						<View style={styles.meterCenter} />
+					</View>
 
-      <TouchableOpacity 
-        style={[styles.captureButton, isLoading && styles.captureButtonDisabled]} 
-        onPress={async () => {
-          if (cameraRef.current && !isLoading) {
-            setShowResults(true);
-            const photo = await cameraRef.current?.takePictureAsync({
-              quality: 0.5,
-              base64: false,
-              exif: true,
-              skipProcessing: false,
-            });
+					<View style={styles.bottomLine} />
 
-            try {
-              setIsLoading(true);
-              setClassification(null);
-              setError(null);
+					<ThemedText style={styles.confidenceText}>
+						Confidence: {confidence ? `${Math.round(confidence * 100)}%` : 'N/A'}
+					</ThemedText>
+					</View>
+				</>
+				)}
+			</Animated.View>
+			</View>
+		)}
 
-              // Create form data
-              const formData = new FormData();
-              formData.append('image', {
-                uri: photo?.uri,
-                type: 'image/jpeg',
-                name: 'photo.jpg',
-              } as any);
+		{error && !isLoading && (
+			<View style={styles.floatingCard}>
+			<Animated.View 
+				style={[styles.resultCard, styles.errorCard]}
+			>
+				<TouchableOpacity 
+				style={styles.closeButton}
+				onPress={() => setError(null)}
+				>
+				<IconSymbol
+					name="xmark.circle.fill"
+					size={24}
+					color="#FFFFFF"
+				/>
+				</TouchableOpacity>
+				<View style={styles.resultHeader}>
+				<IconSymbol
+					name="exclamationmark.triangle.fill"
+					size={32}
+					color="#FF0000"
+				/>
+				<ThemedText style={styles.errorTitle}>Error</ThemedText>
+				</View>
+				<View style={styles.resultContent}>
+				<ThemedText style={styles.errorText}>{error}</ThemedText>
+				</View>
+			</Animated.View>
+			</View>
+		)}
 
-              // Replace with whatever domain we end up using
-              const res = await fetch('https://backend-681014983462.us-east4.run.app/classify/classify-rash', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                  'Content-Type': 'multipart/form-data',
-                },
-              });
+		<TouchableOpacity 
+			style={[styles.captureButton, isLoading && styles.captureButtonDisabled]} 
+			onPress={async () => {
+			if (cameraRef.current && !isLoading) {
+				setShowResults(true);
+				const photo = await cameraRef.current?.takePictureAsync({
+				quality: 0.5,
+				base64: false,
+				exif: true,
+				});
 
-              try {
-                const json = await res.json();
-                setClassification(json.result.class);
-                setConfidence(json.result.confidence);
-                const hash = await Crypto.digestStringAsync(
-                  Crypto.CryptoDigestAlgorithm.SHA256,
-                  photo.uri,
-                );
+				try {
+				setIsLoading(true);
+				setClassification(null);
+				setError(null);
 
-                const fileName = `${hash}.jpg`;
-                const filePath = `${FileSystem.documentDirectory}${fileName}`;
+				// Create form data
+				const formData = new FormData();
+				formData.append('image', {
+					uri: photo?.uri,
+					type: 'image/jpeg',
+					name: 'photo.jpg',
+				} as any);
 
-                // Copy the image to app's local file storage
-                await FileSystem.copyAsync({
-                  from: photo.uri,
-                  to: filePath,
-                });
+				// Replace with whatever domain we end up using
+				const res = await fetch('https://backend-681014983462.us-east4.run.app/classify/classify-rash', {
+					method: 'POST',
+					body: formData,
+					headers: {
+					'Content-Type': 'multipart/form-data',
+					},
+				});
 
-                const history = await AsyncStorage.getItem('classificationHistory');
-                if (history) {
-                  const parsedHistory = JSON.parse(history);
-                  const entry: Classification = {
-                    timestamp: new Date(),
-                    imagePath: filePath,
-                    classification: json.result.class,
-                    confidence: json.result.confidence,
-                  }
-                  parsedHistory.push(entry);
-                  await AsyncStorage.setItem('classificationHistory', JSON.stringify(parsedHistory));
-                } else {
-                  const history: Classification[] = [{
-                    timestamp: new Date(),
-                    imagePath: filePath,
-                    classification: json.result.class,
-                    confidence: json.result.confidence,
-                  }];
-                  await AsyncStorage.setItem('classificationHistory', JSON.stringify(history));
-                }
-              } catch (error) {
-                console.error('Error taking photo:', error);
-                setError('Error taking photo');
-                setClassification(null);
-              }
-            } catch (error) {
-              console.error('Error taking photo:', error);
-              setError('Error taking photo');
-              setClassification(null);
-            }
+				try {
+					const json = await res.json();
+					setClassification(json.result.class);
+					setConfidence(json.result.confidence);
+					const hash = await Crypto.digestStringAsync(
+					Crypto.CryptoDigestAlgorithm.SHA256,
+					photo.uri,
+					);
 
-            setIsLoading(false);
-          }
-        }}
-        disabled={isLoading}
-      >
-        <View style={styles.captureButtonInner}>
-          <IconSymbol
-            name="camera.fill"
-            size={32}
-            color={Colors[colorScheme ?? 'light'].text}
-          />
-        </View>
-      </TouchableOpacity>
-    </View>
+					const fileName = `${hash}.jpg`;
+					const filePath = `${FileSystem.documentDirectory}${fileName}`;
+
+					// Copy the image to app's local file storage
+					await FileSystem.copyAsync({
+					from: photo.uri,
+					to: filePath,
+					});
+
+					const history = await AsyncStorage.getItem('classificationHistory');
+					if (history) {
+					const parsedHistory = JSON.parse(history);
+					const entry: Classification = {
+						timestamp: new Date(),
+						imagePath: filePath,
+						classification: json.result.class,
+						confidence: json.result.confidence,
+					}
+					parsedHistory.push(entry);
+					await AsyncStorage.setItem('classificationHistory', JSON.stringify(parsedHistory));
+					} else {
+					const history: Classification[] = [{
+						timestamp: new Date(),
+						imagePath: filePath,
+						classification: json.result.class,
+						confidence: json.result.confidence,
+					}];
+					await AsyncStorage.setItem('classificationHistory', JSON.stringify(history));
+					}
+				} catch (error) {
+					console.error('Error taking photo:', error);
+					setError('Error taking photo');
+					setClassification(null);
+				}
+				} catch (error) {
+				console.error('Error taking photo:', error);
+				setError('Error taking photo');
+				setClassification(null);
+				}
+
+				setIsLoading(false);
+			}
+			}}
+			disabled={isLoading}
+		>
+			<View style={styles.captureButtonInner}>
+			<IconSymbol
+				name="camera.fill"
+				size={32}
+				color={Colors[colorScheme ?? 'light'].text}
+			/>
+			</View>
+		</TouchableOpacity>
+	</View>
   );
 }
 
@@ -300,16 +382,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#25292e',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   imageContainer: {
+    flex: 1,
     width: '100%',
-    aspectRatio: 1,
-    maxWidth: 500,
-    maxHeight: 500,
-    alignSelf: 'center',
+    position: 'relative',
   },
   camera: {
+    flex: 1,
     width: '100%',
     height: '100%',
   },
@@ -319,12 +399,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingHorizontal: 20,
   },
+  cameraContainer: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   buttonContainer: {
     position: 'absolute',
-    top: 40,
+    top: 60,
     right: 20,
     backgroundColor: 'transparent',
-    zIndex: 1,
+    zIndex: 2,
   },
   flipButton: {
     padding: 12,
@@ -342,14 +427,15 @@ const styles = StyleSheet.create({
   },
   floatingCard: {
     position: 'absolute',
-    top: 150,
+    top: '45%',
     left: 0,
     right: 0,
     alignItems: 'center',
+    transform: [{ translateY: -100 }],
     zIndex: 1000,
   },
   resultCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     padding: 24,
     borderRadius: 20,
     alignItems: 'center',
@@ -419,8 +505,146 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 4,
+    right: 4,
     padding: 4,
+  },
+  zoomContainer: {
+    position: 'absolute',
+    right: -50,
+    top: '50%',
+    transform: [{ rotate: '90deg' }],
+    width: 200,
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  zoomSlider: {
+    width: '100%',
+    height: 40,
+  },
+  confidenceMeter: {
+    width: 200,
+    height: 100,
+    position: 'relative',
+    marginVertical: 16,
+    alignSelf: 'center',
+    overflow: 'hidden',
+  },
+  meterOutline: {
+	width: '100%',
+	height: '100%',
+	backgroundColor: '#000000',
+	borderTopLeftRadius: 100,
+	borderTopRightRadius: 100,
+	position: 'relative',
+	overflow: 'hidden',
+  },
+
+  bottomLine: {
+	marginTop: -25, // pull it slightly up to hug the bottom
+	width: 200,
+	height: 5,
+	backgroundColor: '#000000',
+	alignSelf: 'center',
+	zIndex: 10,
+  },
+  
+  meterBackground: {
+	...StyleSheet.absoluteFillObject, // fills parent exactly
+	top: 5, bottom: 0, left: 5, right: 5, // manual padding
+	backgroundColor: 'rgba(255, 255, 255, 0.1)',
+	borderTopLeftRadius: 95,
+	borderTopRightRadius: 95,
+	overflow: 'hidden',
+  },
+
+  meterGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  meterNeedle: {
+	width: 4,             // thin needle
+    height: 100,          // length of the needle
+    backgroundColor: 'red',
+    position: 'absolute',
+    bottom: 0,            // pivot from bottom center
+    left: '50%',
+    marginLeft: -2,       // to center it horizontally
+    borderRadius: 2,      // smooth edges
+    transformOrigin: 'bottom center',
+  },
+  meterCenter: {
+    position: 'absolute',
+    top: '100%',
+    left: '50%',
+    width: 12,
+    height: 12,
+    backgroundColor: '#000000',
+    borderRadius: 6,
+    transform: [{ translateX: -6 }, { translateY: -6 }],
+    zIndex: 3,
+  },
+  tickMark: {
+	position: 'absolute',
+	width: 2,
+	height: 10,
+	backgroundColor: '#000000',
+	transformOrigin: 'bottom center',
+  },
+  
+  tickMarkContainer: {
+	// position: 'absolute',
+	width: 0,
+	height: 0,
+	top: 0,
+	left: '50%',
+	alignItems: 'center',
+	justifyContent: 'center',
+  },
+  permissionOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  permissionCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    maxWidth: 400,
+    width: '90%',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  permissionIcon: {
+    marginBottom: 16,
+  },
+  permissionTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  permissionMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+    opacity: 0.8,
+  },
+  permissionButton: {
+    backgroundColor: '#0a7ea4',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  permissionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

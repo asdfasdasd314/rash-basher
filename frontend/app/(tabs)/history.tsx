@@ -84,18 +84,20 @@ export default function HistoryScreen() {
                 onRefresh={onRefresh}>
                 <ThemedView style={styles.titleContainer}>
                     <ThemedText type="title">Analysis History</ThemedText>
-                    <TouchableOpacity 
-                        style={styles.clearButton}
-                        onPress={handleClearAll}
-                    >
-                        <IconSymbol name="trash" size={20} color="#FF3B30" />
-                        <ThemedText style={styles.clearButtonText}>Clear All</ThemedText>
-                    </TouchableOpacity>
                 </ThemedView>
 
                 {/* Recent Analyses */}
                 <ThemedView style={styles.section}>
-                    <ThemedText type="subtitle">Recent Analyses</ThemedText>
+                    <View style={styles.sectionHeader}>
+                        <ThemedText type="subtitle">Recent Analyses</ThemedText>
+                        <TouchableOpacity 
+                            style={styles.clearButton}
+                            onPress={handleClearAll}
+                        >
+                            <IconSymbol name="trash" size={20} color="#FF3B30" />
+                            <ThemedText style={styles.clearButtonText}>Clear All</ThemedText>
+                        </TouchableOpacity>
+                    </View>
                     {classifications.length === 0 ? (
                         <ThemedView style={styles.emptyState}>
                             <IconSymbol name="clock" size={40} color="#808080" />
@@ -254,18 +256,21 @@ const styles = StyleSheet.create({
         width: screenWidth,
         height: screenHeight,
     },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
     clearButton: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
         padding: 8,
-        borderRadius: 8,
-        backgroundColor: 'rgba(255, 59, 48, 0.1)',
     },
     clearButtonText: {
         color: '#FF3B30',
         fontSize: 14,
-        fontWeight: '600',
     },
     emptyState: {
         alignItems: 'center',

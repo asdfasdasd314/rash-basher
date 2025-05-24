@@ -10,9 +10,15 @@
 #endif
 #endif
 
-#import "FBReactNativeSpec/FBReactNativeSpec.h"
-#import "FBReactNativeSpecJSI.h"
+#import "RCTModuleProviders.h"
 #import "RCTModulesConformingToProtocolsProvider.h"
+#import "RCTThirdPartyComponentsProvider.h"
+#import "react/renderer/components/RNCSlider/ComponentDescriptors.h"
+#import "react/renderer/components/RNCSlider/EventEmitters.h"
+#import "react/renderer/components/RNCSlider/Props.h"
+#import "react/renderer/components/RNCSlider/RCTComponentViewHelpers.h"
+#import "react/renderer/components/RNCSlider/ShadowNodes.h"
+#import "react/renderer/components/RNCSlider/States.h"
 #import "react/renderer/components/RNCWebViewSpec/ComponentDescriptors.h"
 #import "react/renderer/components/RNCWebViewSpec/EventEmitters.h"
 #import "react/renderer/components/RNCWebViewSpec/Props.h"
@@ -37,6 +43,8 @@
 #import "react/renderer/components/safeareacontext/RCTComponentViewHelpers.h"
 #import "react/renderer/components/safeareacontext/ShadowNodes.h"
 #import "react/renderer/components/safeareacontext/States.h"
+#import "rnasyncstorage/rnasyncstorage.h"
+#import "rnasyncstorageJSI.h"
 #import "RNCWebViewSpec/RNCWebViewSpec.h"
 #import "RNCWebViewSpecJSI.h"
 #import "rngesturehandler_codegen/rngesturehandler_codegen.h"

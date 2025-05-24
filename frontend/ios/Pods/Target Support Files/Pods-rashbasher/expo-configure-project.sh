@@ -48,4 +48,4 @@ with_node \
   --target "/Users/jameshollingsworth/Projects/rash-basher/frontend/ios/Pods/Target Support Files/Pods-rashbasher/ExpoModulesProvider.swift" \
   --entitlement "/Users/jameshollingsworth/Projects/rash-basher/frontend/ios/rashbasher/rashbasher.entitlements" \
   --platform "apple" \
-  --packages "expo" "expo-asset" "expo-blur" "expo-camera" "expo-constants" "expo-file-system" "expo-font" "expo-haptics" "expo-keep-awake" "expo-linking" "expo-router" "expo-splash-screen" "expo-symbols" "expo-system-ui" "expo-web-browser"
+  --packages "expo" "expo-asset" "expo-blur" "expo-camera" "expo-constants" "expo-crypto" "expo-file-system" "expo-font" "expo-haptics" "expo-keep-awake" "expo-linking" "expo-location" "expo-router" "expo-splash-screen" "expo-symbols" "expo-system-ui" "expo-web-browser"

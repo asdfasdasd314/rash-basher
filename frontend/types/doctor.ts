@@ -6,4 +6,8 @@ export type Doctor = {
     total_ratings: number;
     website: string;
     is_open: boolean;
+    location: {
+        lat: number;
+        lng: number;
+    };
 }

@@ -44,6 +44,11 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>ExpoCrypto.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>ExpoFileSystem-ExpoFileSystem_privacy.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -75,6 +80,11 @@
 			<false/>
 		</dict>
 		<key>ExpoLinking.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>ExpoLocation.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -140,6 +150,16 @@
 			<false/>
 		</dict>
 		<key>RCTTypeSafety.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>RNCAsyncStorage-RNCAsyncStorage_resources.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>RNCAsyncStorage.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -224,6 +244,11 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>React-RCTFBReactNativeSpec.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>React-RCTFabric.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -240,6 +265,11 @@
 			<false/>
 		</dict>
 		<key>React-RCTNetwork.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>React-RCTRuntime.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -349,6 +379,16 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>React-jsinspectortracing.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>React-jsitooling.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>React-jsitracing.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -364,7 +404,7 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
-		<key>React-nativeconfig.xcscheme</key>
+		<key>React-oscompat.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -380,6 +420,11 @@
 			<false/>
 		</dict>
 		<key>React-rendererconsistency.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>React-renderercss.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -415,6 +460,11 @@
 			<false/>
 		</dict>
 		<key>React.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>ReactAppDependencyProvider.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -480,6 +530,11 @@
 			<false/>
 		</dict>
 		<key>react-native-safe-area-context.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>react-native-slider.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
