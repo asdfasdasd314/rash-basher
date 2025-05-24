@@ -11,11 +11,13 @@ import ExpoAsset
 import ExpoBlur
 import ExpoCamera
 import EXConstants
+import ExpoCrypto
 import ExpoFileSystem
 import ExpoFont
 import ExpoHaptics
 import ExpoKeepAwake
 import ExpoLinking
+import ExpoLocation
 import ExpoHead
 import ExpoSplashScreen
 import ExpoSymbols
@@ -31,12 +33,15 @@ public class ExpoModulesProvider: ModulesProvider {
       BlurViewModule.self,
       CameraViewModule.self,
       ConstantsModule.self,
+      CryptoModule.self,
       FileSystemModule.self,
       FileSystemNextModule.self,
       FontLoaderModule.self,
+      FontUtilsModule.self,
       HapticsModule.self,
       KeepAwakeModule.self,
       ExpoLinkingModule.self,
+      LocationModule.self,
       ExpoHeadModule.self,
       SplashScreenModule.self,
       SymbolModule.self,

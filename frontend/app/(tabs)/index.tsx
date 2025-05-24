@@ -12,6 +12,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Classification } from '@/types/classification';
 import * as FileSystem from 'expo-file-system';
 import * as Crypto from 'expo-crypto';
+import Slider from '@react-native-community/slider';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function CameraScreen() {
   const [type, setType] = useState<CameraType>('back');
@@ -21,6 +23,8 @@ export default function CameraScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState<boolean>(true);
+  const [zoom, setZoom] = useState(0);
+  const [flashlight, setFlashlight] = useState(false);
   const colorScheme = useColorScheme();
   const cameraRef = useRef<CameraView>(null);
   const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -78,13 +82,15 @@ export default function CameraScreen() {
 
   return (
     <View style={styles.container}>
+		<Disclaimer />
       <View style={styles.imageContainer}>
         <CameraView 
           ref={cameraRef}
           style={styles.camera} 
           facing={type}
           active={true}
-          ratio="1:1"
+          zoom={zoom}
+          enableTorch={flashlight}
           onCameraReady={() => {}}
           onMountError={(error) => {
             setError(error.message);
@@ -98,8 +104,30 @@ export default function CameraScreen() {
                 color={Colors[colorScheme ?? 'light'].text}
               />
             </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => setFlashlight(!flashlight)} 
+              style={[styles.flipButton, { marginTop: 12 }]}
+            >
+              <IconSymbol
+                name={flashlight ? "flashlight.on.fill" : "flashlight.off.fill"}
+                size={32}
+                color={Colors[colorScheme ?? 'light'].text}
+              />
+            </TouchableOpacity>
           </View>
         </CameraView>
+        <View style={styles.zoomContainer}>
+          <Slider
+            style={styles.zoomSlider}
+            minimumValue={0}
+            maximumValue={1}
+            value={zoom}
+            onValueChange={setZoom}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+            thumbTintColor="#FFFFFF"
+          />
+        </View>
       </View>
 
       {(isLoading || (classification && showResults)) && !error && (
@@ -111,7 +139,7 @@ export default function CameraScreen() {
                 opacity: isLoading ? pulseAnim.interpolate({
                   inputRange: [0, 1],
                   outputRange: [0.5, 1],
-                }) : 1,
+                }) : 1.0,
               },
             ]}
           >
@@ -127,7 +155,7 @@ export default function CameraScreen() {
               >
                 <IconSymbol
                   name="xmark.circle.fill"
-                  size={24}
+                  size={20}
                   color="#FFFFFF"
                 />
               </TouchableOpacity>
@@ -155,6 +183,44 @@ export default function CameraScreen() {
                   <ThemedText style={styles.classificationText}>
                     Condition: {classification}
                   </ThemedText>
+                  <View style={styles.confidenceMeter}>
+                    <View style={styles.meterOutline}>
+                      <View style={styles.meterBackground}>
+                        <LinearGradient
+                          colors={['#FF0000', '#FFFF00', '#00FF00']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={styles.meterGradient}
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.tickMarkContainer}>
+                      {[-90, -60, -30, 0, 30, 60, 90].map((angle, index) => (
+                        <View
+                          key={index}
+                          style={[
+                            styles.tickMark,
+                            {
+                              transform: [
+                                { rotate: `${angle}deg` },
+                                { translateY: -90 },
+                              ],
+                            },
+                          ]}
+                        />
+                      ))}
+                    </View>
+                    <View 
+                      style={[
+                        styles.meterNeedle,
+                        { transform: [{ rotate: `${-90 + (confidence || 0) * 180}deg` }] }
+                      ]} 
+                    />
+                    <View style={styles.meterCenter} />
+                  </View>
+
+				  <View style={styles.bottomLine} />
+
                   <ThemedText style={styles.confidenceText}>
                     Confidence: {confidence ? `${Math.round(confidence * 100)}%` : 'N/A'}
                   </ThemedText>
@@ -204,7 +270,6 @@ export default function CameraScreen() {
               quality: 0.5,
               base64: false,
               exif: true,
-              skipProcessing: false,
             });
 
             try {
@@ -300,16 +365,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#25292e',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   imageContainer: {
+    flex: 1,
     width: '100%',
-    aspectRatio: 1,
-    maxWidth: 500,
-    maxHeight: 500,
-    alignSelf: 'center',
   },
   camera: {
+    flex: 1,
     width: '100%',
     height: '100%',
   },
@@ -319,9 +381,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingHorizontal: 20,
   },
+  cameraContainer: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   buttonContainer: {
     position: 'absolute',
-    top: 40,
+    top: 60,
     right: 20,
     backgroundColor: 'transparent',
     zIndex: 1,
@@ -342,14 +409,15 @@ const styles = StyleSheet.create({
   },
   floatingCard: {
     position: 'absolute',
-    top: 150,
+    top: '45%',
     left: 0,
     right: 0,
     alignItems: 'center',
+    transform: [{ translateY: -100 }],
     zIndex: 1000,
   },
   resultCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     padding: 24,
     borderRadius: 20,
     alignItems: 'center',
@@ -419,8 +487,102 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 4,
+    right: 4,
     padding: 4,
+  },
+  zoomContainer: {
+    position: 'absolute',
+    right: -50,
+    top: '50%',
+    transform: [{ rotate: '90deg' }],
+    width: 200,
+    alignItems: 'center',
+  },
+  zoomSlider: {
+    width: '100%',
+    height: 40,
+  },
+  confidenceMeter: {
+    width: 200,
+    height: 100,
+    position: 'relative',
+    marginVertical: 16,
+    alignSelf: 'center',
+    overflow: 'hidden',
+  },
+  meterOutline: {
+	width: '100%',
+	height: '100%',
+	backgroundColor: '#000000',
+	borderTopLeftRadius: 100,
+	borderTopRightRadius: 100,
+	position: 'relative',
+	overflow: 'hidden',
+  },
+
+  bottomLine: {
+	marginTop: -25, // pull it slightly up to hug the bottom
+	width: 200,
+	height: 5,
+	backgroundColor: '#000000',
+	alignSelf: 'center',
+	zIndex: 10,
+  },
+  
+  meterBackground: {
+	...StyleSheet.absoluteFillObject, // fills parent exactly
+	top: 5, bottom: 0, left: 5, right: 5, // manual padding
+	backgroundColor: 'rgba(255, 255, 255, 0.1)',
+	borderTopLeftRadius: 95,
+	borderTopRightRadius: 95,
+	overflow: 'hidden',
+  },
+
+  meterGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  meterNeedle: {
+	width: 4,             // thin needle
+    height: 100,          // length of the needle
+    backgroundColor: 'red',
+    position: 'absolute',
+    bottom: 0,            // pivot from bottom center
+    left: '50%',
+    marginLeft: -2,       // to center it horizontally
+    borderRadius: 2,      // smooth edges
+    transformOrigin: 'bottom center',
+  },
+  meterCenter: {
+    position: 'absolute',
+    top: '100%',
+    left: '50%',
+    width: 12,
+    height: 12,
+    backgroundColor: '#000000',
+    borderRadius: 6,
+    transform: [{ translateX: -6 }, { translateY: -6 }],
+    zIndex: 3,
+  },
+  tickMark: {
+	position: 'absolute',
+	width: 2,
+	height: 10,
+	backgroundColor: '#000000',
+	transformOrigin: 'bottom center',
+  },
+  
+  tickMarkContainer: {
+	// position: 'absolute',
+	width: 0,
+	height: 0,
+	top: 0,
+	left: '50%',
+	alignItems: 'center',
+	justifyContent: 'center',
   },
 });
