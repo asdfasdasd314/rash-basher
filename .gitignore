@@ -27,3 +27,12 @@ backend/*.sqlite3
 backend/.venv/
 backend/venv/
 backend/ENV/
+
+# Frontend
+frontend/node_modules/
+frontend/ios/
+frontend/android/
+frontend/build/
+frontend/dist/
+frontend/public/
+frontend/src/
