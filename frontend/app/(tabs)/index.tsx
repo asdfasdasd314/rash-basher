@@ -134,16 +134,30 @@ export default function CameraScreen() {
 				</TouchableOpacity>
 			</View>
 			<View style={styles.zoomContainer}>
-				<Slider
-					style={styles.zoomSlider}
-					minimumValue={0}
-					maximumValue={1}
-					value={zoom}
-					onValueChange={setZoom}
-					minimumTrackTintColor="#FFFFFF"
-					maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-					thumbTintColor="#FFFFFF"
-				/>
+        <IconSymbol
+          name="plus.magnifyingglass"
+          size={24}
+          color="#FFFFFF"
+          style={styles.plusZoomIcon}
+        />
+				<View style={styles.zoomContent}>
+					<Slider
+						style={styles.zoomSlider}
+						minimumValue={0}
+						maximumValue={1}
+						value={zoom}
+						onValueChange={setZoom}
+						minimumTrackTintColor="#FFFFFF"
+						maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+						thumbTintColor="#FFFFFF"
+					/>
+				</View>
+        <IconSymbol
+          name="minus.magnifyingglass"
+          size={24}
+          color="#FFFFFF"
+          style={styles.minusZoomIcon}
+        />
 			</View>
 		</View>
 
@@ -518,9 +532,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 2,
   },
+  zoomContent: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
   zoomSlider: {
-    width: '100%',
+    width: 200,
     height: 40,
+    transform: [{ rotate: '180deg' }],
+  },
+  plusZoomIcon: {
+    position: 'absolute',
+    top: 5,
+    left: -30,
+    transform: [{ rotate: '-90deg' }],
+  },
+  minusZoomIcon: {
+    position: 'absolute',
+    top: 5,
+    left: 210,
+    transform: [{ rotate: '-90deg' }],
   },
   confidenceMeter: {
     width: 200,

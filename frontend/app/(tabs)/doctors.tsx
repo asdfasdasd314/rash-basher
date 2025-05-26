@@ -1,3 +1,33 @@
+// // React Native example
+// import { View, Text, Platform } from 'react-native';
+// import { WebView } from 'react-native-webview';
+
+// export default function LeafletMap() {
+//   const html = `
+//     <!DOCTYPE html>
+//     <html>
+//     <head>
+//       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//       <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+//     </head>
+//     <body>
+//       <div id="map" style="height: 100vh;"></div>
+//       <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+//       <script>
+//         var map = L.map('map').setView([37.7749, -122.4194], 13);
+//         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+//         L.marker([37.7749, -122.4194]).addTo(map).bindPopup('Hello from Leaflet!');
+//       </script>
+//     </body>
+//     </html>
+//   `;
+
+//   if (Platform.OS !== 'web') {
+//     return <WebView originWhitelist={['*']} source={{ html }} />;
+//   }
+//   return html;
+// }
+
 import { StyleSheet, View, Linking, TouchableOpacity, ScrollView, Dimensions, Animated, Platform, UIManager, Easing } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -14,7 +44,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-export default function SettingsScreen() {
+export default function DoctorsScreen() {
     const [doctors, setDoctors] = useState<Doctor[]>([]);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
