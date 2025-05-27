@@ -42,7 +42,7 @@ const conditions: Record<string, Condition> = {
     }
 };
 
-export default function ProfileScreen() {
+export default function ConditionsScreen() {
     const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
 
     return (
