@@ -2,11 +2,15 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Font from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { MaterialIcons } from '@expo/vector-icons';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
+import * as icons from '@expo/vector-icons';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -17,7 +21,14 @@ export default function RootLayout() {
         SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     });
 
+    const [fontsLoaded, setFontsLoaded] = useState(false);
+
     useEffect(() => {
+        Font.loadAsync({
+            ...MaterialIcons.font,
+        }).then(() => {
+            setFontsLoaded(true);
+        });
         if (loaded) {
             SplashScreen.hideAsync();
         }

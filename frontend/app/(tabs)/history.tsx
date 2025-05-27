@@ -5,26 +5,10 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { useEffect, useState, useCallback } from 'react';
 import { Classification } from '@/types/classification';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
 import { useColorScheme } from '@/hooks/useColorScheme';
-
+import { getClassificationHistory, clearClassificationHistory } from '@/utils/storage';
+import { Platform } from 'react-native';
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
-const clearAll = async () => {
-    const data = await AsyncStorage.getItem('classificationHistory');
-    if (data) {
-        const entries = JSON.parse(data);
-        for (const entry of entries) {
-            try {
-                await FileSystem.deleteAsync(entry.imagePath, { idempotent: true });
-            } catch (e) {
-                console.warn(`Couldn't delete file ${entry.imagePath}`, e);
-            }
-        }
-        await AsyncStorage.removeItem('classificationHistory');
-    }
-};
 
 export default function HistoryScreen() {
     const [history, setHistory] = useState<Classification[]>([]);
@@ -34,15 +18,14 @@ export default function HistoryScreen() {
     const colorScheme = useColorScheme() ?? 'light';
 
     const loadHistory = async () => {
-        const retrievedHistory = await AsyncStorage.getItem('classificationHistory');
+        const retrievedHistory = await getClassificationHistory();
         if (retrievedHistory) {
-            const parsedHistory = JSON.parse(retrievedHistory);
             // Sort by timestamp in descending order (most recent first)
-            parsedHistory.sort((a: Classification, b: Classification) => 
+            retrievedHistory.sort((a: Classification, b: Classification) => 
                 new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
             );
-            setHistory(parsedHistory);
-            setClassifications(parsedHistory);
+            setHistory(retrievedHistory);
+            setClassifications(retrievedHistory);
         } else {
             setHistory([]);
             setClassifications([]);
@@ -59,7 +42,7 @@ export default function HistoryScreen() {
     }, []);
 
     const handleClearAll = async () => {
-        await clearAll();
+        await clearClassificationHistory();
         setClassifications([]);
         await loadHistory();
     };
