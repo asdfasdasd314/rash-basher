@@ -1,4 +1,4 @@
-import { StyleSheet, View, Linking, TouchableOpacity, ScrollView, Dimensions, Animated, Platform, UIManager, Easing } from 'react-native';
+import { StyleSheet, View, Linking, TouchableOpacity, ScrollView, Dimensions, Animated, Platform, UIManager, Easing, AppState } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -76,16 +76,12 @@ export default function SettingsScreen() {
         }
     };
 
-    useEffect(() => {
-        async function onMount() {
-            let { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-              setErrorMsg('Permission to access location was denied');
-              return;
-            }
-      
+    const checkLocationPermission = async () => {
+        const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+            setErrorMsg(null);
+            // Fetch doctors data
             let location = await Location.getCurrentPositionAsync({});
-
             const response = await fetch('https://backend-681014983462.us-east4.run.app/doctors/find-dermatologists', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -97,33 +93,34 @@ export default function SettingsScreen() {
                 },
             });
 
-            // For testing
-            // const data = {dermatologists: [
-            //     {"address": "1500 E Medical Center Dr #1910, Ann Arbor, MI 48109, USA", "is_open": false, "location": { "latitude": 42.2813, "longitude": -83.7311 }, "name": "Cosmetic Dermatology and Laser Center", "phone": "(734) 615-0682", "rating": 4.2, "total_ratings": 5, "website": "http://cosmeticderm.med.umich.edu/"},
-            //     {"address": "1500 E. Medical Center Drive, Floor 1, Reception B, Ann Arbor, MI 48109, USA", "is_open": false, "location": { "latitude": 42.2814, "longitude": -83.7312 }, "name": "Dermatology at Taubman Center", "phone": "(734) 936-4054", "rating": 2.4, "total_ratings": 17, "website": "https://www.uofmhealth.org/our-locations/taubman-dermatology"},
-            //     {"address": "4990 Clark Rd Suite 200, Ypsilanti, MI 48197, USA", "is_open": false, "location": { "latitude": 42.2815, "longitude": -83.7313 }, "name": "Trinity Health IHA Medical Group, Dermatologic Surgery - Arbor Park", "phone": "(734) 572-7500", "rating": 5, "total_ratings": 3, "website": "https://ihacares.com/locations/mi/ypsilanti/iha-dermatologic-surgery?utm_source=googlemybusiness&utm_campaign=Google%20My%20Business&utm_medium=organic"},
-            //     {"address": "305 E Eisenhower Pkwy Suite 320, Ann Arbor, MI 48108, USA", "is_open": false, "location": { "latitude": 42.2816, "longitude": -83.7314 }, "name": "A. Craig Cattell, MD, FAAD", "phone": "(734) 800-2055", "rating": 4.8, "total_ratings": 69, "website": "https://forefrontdermatology.com/provider/craig-cattell-md/?utm_source=GMB&utm_medium=Yext&y_source=1_MTQ4NjQ0MjgtNzE1LWxvY2F0aW9uLndlYnNpdGU%3D"},
-            //     {"address": "250 W Eisenhower Pkwy #100, Ann Arbor, MI 48103, USA", "is_open": false, "location": { "latitude": 42.2817, "longitude": -83.7315 }, "name": "Art of Dermatology - Ann Arbor", "phone": "(248) 581-0333", "rating": 4.9, "total_ratings": 284, "website": "http://www.theartofderm.com/"},
-            //     {"address": "1979 Huron Pkwy, Ann Arbor, MI 48104, USA", "is_open": false, "location": { "latitude": 42.2818, "longitude": -83.7316 }, "name": "Ganger Dermatology (Ann Arbor)", "phone": "(734) 344-4567", "rating": 4.7, "total_ratings": 601, "website": "https://gangerdermatology.com/site/schedule-appointment/"},
-            //     {"address": "1500 E Medical Center Dr, Ann Arbor, MI 48109, USA", "is_open": false, "location": { "latitude": 42.2819, "longitude": -83.7317 }, "name": "Derm Clinical Studies", "phone": "(734) 936-4070", "rating": "N/A", "total_ratings": 0, "website": "N/A"},
-            //     {"address": "1500 E Medical Center Dr # 1, Ann Arbor, MI 48109, USA", "is_open": false, "location": { "latitude": 42.2820, "longitude": -83.7318 }, "name": "Ellis Charles MD", "phone": "(734) 936-4054", "rating": 5, "total_ratings": 1, "website": "http://www.uofmhealth.org/"},
-            //     {"address": "1500 E Medical Center Dr, Ann Arbor, MI 48109, USA", "is_open": true, "location": { "latitude": 42.2821, "longitude": -83.7319 }, "name": "A. Alfred Taubman Health Care Center", "phone": "(734) 936-4000", "rating": 4.2, "total_ratings": 136, "website": "http://www.med.umich.edu/"},
-            //     {"address": "207 Fletcher St, Ann Arbor, MI 48109, USA", "is_open": false, "location": { "latitude": 42.2822, "longitude": -83.7320 }, "name": "University Health Service, University of Michigan", "phone": "(734) 764-8320", "rating": 2.5, "total_ratings": 151, "website": "https://uhs.umich.edu/"}
-            // ]};
-
             if (response.ok) {
                 const data = await response.json();
                 setDoctors(data.dermatologists as Doctor[]);
                 setErrorMsg(null);
-            }
-            else {
+            } else {
                 setErrorMsg(await response.text());
             }
+        } else {
+            setErrorMsg(canAskAgain 
+                ? 'Permission to access location was denied'
+                : 'Location access is required but was denied. Please enable it in your device settings to find nearby doctors.');
         }
-      
-        onMount();
-    }, []);
+    };
 
+    useEffect(() => {
+        checkLocationPermission();
+
+        // Add listener for app state changes
+        const subscription = AppState.addEventListener('change', (nextAppState) => {
+            if (nextAppState === 'active') {
+                checkLocationPermission();
+            }
+        });
+
+        return () => {
+            subscription.remove();
+        };
+    }, []);
 
     const openMaps = async (address: string) => {
         const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
@@ -132,109 +129,139 @@ export default function SettingsScreen() {
 
     return (
         <View style={styles.container}>
-            <MapView
-                ref={mapRef}
-                style={styles.map}
-                initialRegion={{
-                    latitude: doctors.length > 0 ? doctors[0].location.lat : 42.2813,
-                    longitude: doctors.length > 0 ? doctors[0].location.lng : 42.2813,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                }}
-                onPress={() => setSelectedMarker(null)}
-            >
-                {doctors.map((doctor) => (
-                    <Marker
-                        ref={(ref) => {
-                            if (ref) {
-                                markerRefs.current[doctor.name] = ref;
-                            }
-                        }}
-                        key={doctor.name}
-                        coordinate={{
-                            latitude: doctor.location.lat,
-                            longitude: doctor.location.lng,
-                        }}
-                        title={doctor.name}
-                        description={doctor.address}
-                        onCalloutPress={() => openMaps(doctor.address)}
-                        onPress={() => setSelectedMarker(doctor.name)}
-                        tracksViewChanges={false}
-                    >
-                    </Marker>
-                ))}
-            </MapView>
-
-            {doctors.length === 0 && (
+            {errorMsg && (
                 <View style={styles.noDoctorsOverlay}>
                     <ThemedView style={styles.noDoctorsCard}>
-                        <IconSymbol name="exclamationmark.triangle.fill" size={48} color="#FFD700" />
-                        <ThemedText type="title" style={styles.noDoctorsTitle}>No Doctors Found</ThemedText>
+                        <IconSymbol name="location.slash.fill" size={48} color="#FFD700" />
+                        <ThemedText type="title" style={styles.noDoctorsTitle}>Location Access Required</ThemedText>
                         <ThemedText style={styles.noDoctorsText}>
-                            We couldn't find any dermatologists in your area. Please try again later or check your location settings.
+                            {errorMsg}
                         </ThemedText>
+                        <TouchableOpacity 
+                            style={styles.permissionButton}
+                            onPress={async () => {
+                                if (errorMsg.includes('settings')) {
+                                    Linking.openSettings();
+                                } else {
+                                    checkLocationPermission();
+                                }
+                            }}
+                        >
+                            <ThemedText style={styles.permissionButtonText}>
+                                {errorMsg.includes('settings') ? 'Open Settings' : 'Grant Permission'}
+                            </ThemedText>
+                        </TouchableOpacity>
                     </ThemedView>
                 </View>
             )}
 
-            <Animated.View style={[styles.bottomSheet, { height: animatedHeight }]}> 
-                <TouchableOpacity onPress={toggleSheet} activeOpacity={0.7} style={styles.handleContainer}>
-                    <IconSymbol
-                        name={isExpanded ? 'chevron.down' : 'chevron.up'}
-                        size={32}
-                        color="#FFFFFF"
-                        style={styles.arrowHandle}
-                    />
-                </TouchableOpacity>
-                <ScrollView 
-                    style={styles.doctorsList}
-                    scrollEnabled={isExpanded}
-                >
-                    {doctors.map((doctor, index) => (
-                        <TouchableOpacity 
-                            key={doctor.name}
-                            style={[
-                                styles.doctorCard,
-                                selectedMarker === doctor.name && styles.selectedDoctorCard
-                            ]}
-                            onPress={() => handleDoctorPress(doctor)}
-                        >
-                            <View style={styles.doctorHeader}>
-                                <ThemedText style={styles.doctorName}>{doctor.name}</ThemedText>
-                                <View style={styles.ratingContainer}>
-                                    <IconSymbol name="star.fill" size={16} color="#FFD700" />
-                                    <ThemedText style={styles.rating}>
-                                        {doctor.rating}
-                                    </ThemedText>
-                                </View>
-                            </View>
-                            <View style={styles.doctorInfo}>
-                                <View style={styles.infoRow}>
-                                    <IconSymbol name="location.fill" size={16} color="#666666" style={styles.icon} />
-                                    <ThemedText style={styles.wrappedText}>{doctor.address}</ThemedText>
-                                </View>
-                                <View style={styles.infoRow}>
-                                    <IconSymbol name="phone.fill" size={16} color="#666666" style={styles.icon} />
-                                    <ThemedText style={styles.wrappedText}>{doctor.phone}</ThemedText>
-                                </View>
-                                {doctor.website !== "N/A" && (
-                                    <View style={styles.infoRow}>
-                                        <IconSymbol name="globe" size={16} color="#666666" style={styles.icon} />
-                                        <TouchableOpacity 
-                                            onPress={(e) => {
-                                                e.stopPropagation();
-                                                openWebsite(doctor.website);
-                                            }}
-                                        >
-                                            <ThemedText style={styles.linkText}>Visit Website</ThemedText>
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-                            </View>
+            {!errorMsg && (
+                <>
+                    <MapView
+                        ref={mapRef}
+                        style={styles.map}
+                        initialRegion={{
+                            latitude: doctors.length > 0 ? doctors[0].location.lat : 42.2813,
+                            longitude: doctors.length > 0 ? doctors[0].location.lng : 42.2813,
+                            latitudeDelta: 0.01,
+                            longitudeDelta: 0.01,
+                        }}
+                        onPress={() => setSelectedMarker(null)}
+                    >
+                        {doctors.map((doctor) => (
+                            <Marker
+                                ref={(ref) => {
+                                    if (ref) {
+                                        markerRefs.current[doctor.name] = ref;
+                                    }
+                                }}
+                                key={doctor.name}
+                                coordinate={{
+                                    latitude: doctor.location.lat,
+                                    longitude: doctor.location.lng,
+                                }}
+                                title={doctor.name}
+                                description={doctor.address}
+                                onCalloutPress={() => openMaps(doctor.address)}
+                                onPress={() => setSelectedMarker(doctor.name)}
+                                tracksViewChanges={false}
+                            >
+                            </Marker>
+                        ))}
+                    </MapView>
+
+                    {doctors.length === 0 && (
+                        <View style={styles.noDoctorsOverlay}>
+                            <ThemedView style={styles.noDoctorsCard}>
+                                <IconSymbol name="exclamationmark.triangle.fill" size={48} color="#FFD700" />
+                                <ThemedText type="title" style={styles.noDoctorsTitle}>No Doctors Found</ThemedText>
+                                <ThemedText style={styles.noDoctorsText}>
+                                    We couldn't find any dermatologists in your area. Please try again later or check your location settings.
+                                </ThemedText>
+                            </ThemedView>
+                        </View>
+                    )}
+
+                    <Animated.View style={[styles.bottomSheet, { height: animatedHeight }]}> 
+                        <TouchableOpacity onPress={toggleSheet} activeOpacity={0.7} style={styles.handleContainer}>
+                            <IconSymbol
+                                name={isExpanded ? 'chevron.down' : 'chevron.up'}
+                                size={32}
+                                color="#FFFFFF"
+                            />
+                            <ThemedText style={styles.handleText}>{isExpanded ? 'Hide' : 'Show'} Doctors</ThemedText>
                         </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </Animated.View>
+                        <ScrollView 
+                            style={styles.doctorsList}
+                            scrollEnabled={isExpanded}
+                        >
+                            {doctors.map((doctor, index) => (
+                                <TouchableOpacity 
+                                    key={doctor.name}
+                                    style={[
+                                        styles.doctorCard,
+                                        selectedMarker === doctor.name && styles.selectedDoctorCard
+                                    ]}
+                                    onPress={() => handleDoctorPress(doctor)}
+                                >
+                                    <View style={styles.doctorHeader}>
+                                        <ThemedText style={styles.doctorName}>{doctor.name}</ThemedText>
+                                        <View style={styles.ratingContainer}>
+                                            <IconSymbol name="star.fill" size={16} color="#FFD700" />
+                                            <ThemedText style={styles.rating}>
+                                                {doctor.rating}
+                                            </ThemedText>
+                                        </View>
+                                    </View>
+                                    <View style={styles.doctorInfo}>
+                                        <View style={styles.infoRow}>
+                                            <IconSymbol name="location.fill" size={16} color="#666666" style={styles.icon} />
+                                            <ThemedText style={styles.wrappedText}>{doctor.address}</ThemedText>
+                                        </View>
+                                        <View style={styles.infoRow}>
+                                            <IconSymbol name="phone.fill" size={16} color="#666666" style={styles.icon} />
+                                            <ThemedText style={styles.wrappedText}>{doctor.phone}</ThemedText>
+                                        </View>
+                                        {doctor.website !== "N/A" && (
+                                            <View style={styles.infoRow}>
+                                                <IconSymbol name="globe" size={16} color="#666666" style={styles.icon} />
+                                                <TouchableOpacity 
+                                                    onPress={(e) => {
+                                                        e.stopPropagation();
+                                                        openWebsite(doctor.website);
+                                                    }}
+                                                >
+                                                    <ThemedText style={styles.linkText}>Visit Website</ThemedText>
+                                                </TouchableOpacity>
+                                            </View>
+                                        )}
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </Animated.View>
+                </>
+            )}
         </View>
     );
 }
@@ -348,20 +375,37 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         overflow: 'hidden',
-        marginBottom: 24,
+        marginBottom: 40,
     },
     handleContainer: {
         width: '100%',
-        height: 48,
+        paddingBottom: 12,
+        height: 60,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        marginBottom: 0,
     },
-    arrowHandle: {
-        // No extra style needed, but you can add margin if desired
+    handleText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
     },
     doctorsList: {
         flex: 1,
         padding: 16,
     },
+    permissionButton: {
+        backgroundColor: '#0a7ea4',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 12,
+        marginTop: 16,
+    },
+    permissionButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+    },
 }); 
+

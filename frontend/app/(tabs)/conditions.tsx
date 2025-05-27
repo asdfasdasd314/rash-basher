@@ -102,7 +102,7 @@ export default function ProfileScreen() {
                             onPress={(e) => e.stopPropagation()}
                         >
                             <View style={styles.modalHeader}>
-                                <ThemedText type="title">
+                                <ThemedText type="title" style={styles.modalTitle}>
                                     {selectedCondition ? conditions[selectedCondition].title : ''}
                                 </ThemedText>
                                 <TouchableOpacity 
@@ -236,9 +236,15 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,
+        gap: 12,
     },
     closeButton: {
         padding: 4,
+        flexShrink: 0,
+    },
+    modalTitle: {
+        flex: 1,
+        marginRight: 8,
     },
     modalBody: {
         maxHeight: '100%',

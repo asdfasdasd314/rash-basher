@@ -14,6 +14,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Crypto from 'expo-crypto';
 import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Linking } from 'react-native';
 
 export default function CameraScreen() {
   const [type, setType] = useState<CameraType>('back');
@@ -24,10 +25,20 @@ export default function CameraScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState<boolean>(true);
   const [zoom, setZoom] = useState(0);
+  const [mount, setMount] = useState(false);
   const [flashlight, setFlashlight] = useState(false);
   const colorScheme = useColorScheme();
   const cameraRef = useRef<CameraView>(null);
   const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Wait 3 seconds before mounting the camera
+    if (permission?.granted) {
+      setTimeout(() => {
+        setMount(true);
+      }, 3000);
+    }
+  }, [permission]);
 
   useEffect(() => {
     if (isLoading) {
@@ -69,14 +80,25 @@ export default function CameraScreen() {
             />
             <ThemedText style={styles.permissionTitle}>Camera Access Required</ThemedText>
             <ThemedText style={styles.permissionMessage}>
-              We need your permission to access the camera to analyze skin conditions.
+              {permission.canAskAgain 
+                ? "We need your permission to access the camera to analyze skin conditions."
+                : "Camera access is required but was denied. Please enable it in your device settings to use this feature."}
             </ThemedText>
-            <TouchableOpacity 
-              style={styles.permissionButton}
-              onPress={requestPermission}
-            >
-              <ThemedText style={styles.permissionButtonText}>Grant Permission</ThemedText>
-            </TouchableOpacity>
+            {permission.canAskAgain ? (
+              <TouchableOpacity 
+                style={styles.permissionButton}
+                onPress={requestPermission}
+              >
+                <ThemedText style={styles.permissionButtonText}>Grant Permission</ThemedText>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                style={styles.permissionButton}
+                onPress={() => Linking.openSettings()}
+              >
+                <ThemedText style={styles.permissionButtonText}>Open Settings</ThemedText>
+              </TouchableOpacity>
+            )}
           </ThemedView>
         </View>
       </ThemedView>
@@ -102,18 +124,20 @@ export default function CameraScreen() {
     <View style={styles.container}>
 		<Disclaimer />
 		<View style={styles.imageContainer}>
-			<CameraView 
-				ref={cameraRef}
-				style={styles.camera} 
-				facing={type}
-				active={true}
-				zoom={zoom}
-				enableTorch={flashlight}
-				onCameraReady={() => {}}
-				onMountError={(error) => {
-					setError(error.message);
-				}}
-			/>
+      {mount && (
+        <CameraView 
+          ref={cameraRef}
+          style={styles.camera} 
+          facing={type}
+          active={true}
+          zoom={zoom}
+          enableTorch={flashlight}
+          onCameraReady={() => {}}
+          onMountError={(error) => {
+            setError(error.message);
+          }}
+        />
+      )}
 			<View style={styles.buttonContainer}>
 				<TouchableOpacity onPress={toggleCameraType} style={styles.flipButton}>
 					<IconSymbol
@@ -124,7 +148,7 @@ export default function CameraScreen() {
 				</TouchableOpacity>
 				<TouchableOpacity 
 					onPress={() => setFlashlight(!flashlight)} 
-					style={[styles.flipButton, { marginTop: 12 }]}
+					style={[styles.flipButton, { marginTop: 12, backgroundColor: flashlight ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.2)' }]}
 				>
 					<IconSymbol
 						name={flashlight ? "flashlight.on.fill" : "flashlight.off.fill"}
@@ -133,17 +157,31 @@ export default function CameraScreen() {
 					/>
 				</TouchableOpacity>
 			</View>
+      
 			<View style={styles.zoomContainer}>
-				<Slider
-					style={styles.zoomSlider}
-					minimumValue={0}
-					maximumValue={1}
-					value={zoom}
-					onValueChange={setZoom}
-					minimumTrackTintColor="#FFFFFF"
-					maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-					thumbTintColor="#FFFFFF"
-				/>
+        <IconSymbol
+          name="plus.magnifyingglass"
+          size={24}
+          color="#FFFFFF"
+          style={styles.plusZoomIcon}
+        />
+        <View style={styles.zoomContainer}></View>
+          <Slider
+            style={styles.zoomSlider}
+            minimumValue={0}
+            maximumValue={1}
+            value={zoom}
+            onValueChange={setZoom}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+            thumbTintColor="#FFFFFF"
+          />
+        <IconSymbol
+          name="minus.magnifyingglass"
+          size={24}
+          color="#FFFFFF"
+          style={styles.minusZoomIcon}
+        />
 			</View>
 		</View>
 
@@ -519,8 +557,21 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   zoomSlider: {
-    width: '100%',
+    width: 200,
     height: 40,
+    transform: [{ rotate: '180deg' }],
+  },
+  plusZoomIcon: {
+    position: 'absolute',
+    top: 5,
+    left: -30,
+    transform: [{ rotate: '-90deg' }],
+  },
+  minusZoomIcon: {
+    position: 'absolute',
+    top: 5,
+    left: 210,
+    transform: [{ rotate: '-90deg' }],
   },
   confidenceMeter: {
     width: 200,
